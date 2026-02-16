@@ -1,10 +1,13 @@
 import json
 from django.core import serializers
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from .models import SolicitudPresupuesto
 from core.serializer import BaseSerializer 
+from core.utils.login_required import login_required_json
 
+@login_required_json
 def solicitudes_list(request):
     qs = SolicitudPresupuesto.objects.select_related(
        'colaborador', 'ubicacion', 'cuenta_analitica'
