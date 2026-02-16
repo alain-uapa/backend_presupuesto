@@ -106,9 +106,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Santo_Domingo'
 
 USE_I18N = True
 
@@ -124,7 +124,17 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 try:
     from .local_settings import *
+    # Si la importación tiene éxito, estamos en LOCAL
+    ENTORNO = "LOCAL (Desarrollo)"
+    COLOR_MSG = "\033[93m"  # Amarillo para local
 except ImportError:
-    pass
+    # Si falla, estamos en PRODUCCIÓN (o el servidor real)
+    ENTORNO = "PRODUCCIÓN (Servidor UAPA)"
+    COLOR_MSG = "\033[92m"  # Verde para producción
+finally:
+    # Esto imprime un mensaje elegante en la terminal al iniciar
+    reset_color = "\033[0m"
+    print(f"\n{COLOR_MSG}>>> [SISTEMA PRESUPUESTO] Conectado a: {ENTORNO}{reset_color}\n")
