@@ -1,7 +1,11 @@
+annotated-types==0.7.0
 asgiref==3.11.1
 Django==5.2.11
 django-cors-headers==4.9.0
-djangorestframework==3.16.1
+django-ninja==1.5.3
 psycopg2-binary==2.9.11
+pydantic==2.12.5
+pydantic_core==2.41.5
 sqlparse==0.5.5
+typing-inspection==0.4.2
 typing_extensions==4.15.0
