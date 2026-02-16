@@ -51,5 +51,10 @@ class SolicitudPresupuesto(models.Model):
     # Nombre más apropiado para el motivo de rechazo
     observaciones_supervisor = models.TextField(blank=True, null=True, verbose_name="Observaciones de Revisión")
 
+    @property
+    def get_nombre_colaborador(self):
+        # get_full_name() es un método estándar de Django que une first_name y last_name
+        return self.colaborador.get_full_name()
+    
     def __str__(self):
         return f"{self.titulo} - {self.colaborador.get_full_name()}"
