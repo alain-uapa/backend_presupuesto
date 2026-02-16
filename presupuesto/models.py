@@ -35,7 +35,7 @@ class SolicitudPresupuesto(models.Model):
     # Relación con el Colaborador
     colaborador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
-    nombre_proyecto = models.CharField(max_length=200, verbose_name="Nombre de la solicitud")
+    titulo = models.CharField(max_length=200, verbose_name="Nombre de la solicitud")
     descripcion = models.TextField()
     
     tipo_solicitud = models.CharField(max_length=20, choices=TIPO_CHOICES)
@@ -52,4 +52,4 @@ class SolicitudPresupuesto(models.Model):
     observaciones_supervisor = models.TextField(blank=True, null=True, verbose_name="Observaciones de Revisión")
 
     def __str__(self):
-        return f"{self.nombre_proyecto} - {self.colaborador.get_full_name()}"
+        return f"{self.titulo} - {self.colaborador.get_full_name()}"

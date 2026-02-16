@@ -3,9 +3,9 @@ from .models import SolicitudPresupuesto, Ubicacion, CuentaAnalitica
 
 @admin.register(SolicitudPresupuesto)
 class SolicitudAdmin(admin.ModelAdmin):
-    list_display = ('nombre_proyecto', 'colaborador', 'estado', 'fecha_solicitud', 'monto_a_ejecutar')
+    list_display = ('titulo', 'colaborador', 'estado', 'fecha_solicitud', 'monto_a_ejecutar')
     list_filter = ('estado', 'tipo_solicitud', 'ubicacion')
-    search_fields = ('nombre_proyecto', 'colaborador__email')
+    search_fields = ('titulo', 'colaborador__email')
     
     def get_queryset(self, request):
         qs = super().get_queryset(request)
