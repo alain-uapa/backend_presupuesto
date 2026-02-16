@@ -24,7 +24,11 @@ SECRET_KEY = 'django-insecure-@u!kyz^xws@o0-%op9$j1htge^x#q(@9)c^-eohcv_qjqn53li
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'abiotic-kenzie-braggadocian.ngrok-free.dev',
+    'localhost',
+    '127.0.0.1',
+]
 
 
 # Application definition
@@ -52,6 +56,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "https://abiotic-kenzie-braggadocian.ngrok-free.dev",
     "http://localhost:3000", # La URL donde correrá tu React
 ]
 
