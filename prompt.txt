@@ -1,0 +1,41 @@
+quiero desarollar una aplicación de gestión presupuestaria para la UAPA, la misma debe contar una página de login, la autenticación es con google, tendremos 2 roles, colaborador y administrador. Cuando el colaborador inicie sesion de le mostrará todos las solicitudes de presupuesto que ha realizado en forma de tarjetas, por defecto se le mostrará las del año actual pero puede switchear a otro año. E ncada tarjeta se le mostrará 'Nombre de la actividad', fecha de solicitud y el estado(pendiente,aprobada, rechazada). Al hacer click en cada tarjeta se ira a los detalles de la solicitud. Por el momento una solicitud de presupuesto tienes los siguientes campos:
+- Fecha de solicitud
+- Nombre
+- Descripción
+- Estado(Pendiente, Aprobada, Rechazada)
+- Motivo de por qué Rechazada(Elige un nombre más apropiado)
+Una solicitud se podrá editar sólo si está pendiente.
+**Role Administrador
+Al administrador iniciar sesión verá todas las solicitudes del año acual, ordenadas por fecha, pero podría filtrar por estado, puede cambiar el estado a cada solicitud
+Quiero usar toast para lo mensajes, con la opción de una barra de progreso q indique el tiempo q le queda visible 
+
+Quiero agregar el siguiente texto como ayuda de contacto:
+¿Necesitas asistencia? Llama a la sede Ext. 378 o Flota: 829-901-2885
+
+Paleta de Colores Actualizada:
+Naranja Principal: #ff8300 (El color exacto solicitado).
+Naranja Hover: #e67600 (Un tono ligeramente más oscuro para feedback visual).
+Contraste: Se mantendrá el texto en blanco sobre este color para garantizar la máxima legibilidad y cumplimiento de normas de accesibilidad.
+Ajustes Visuales:
+Botones de Acción: Todos los botones de envío, creación e inicio de sesión se actualizarán a #ff8300.
+Sombras y Acentos: Las sombras suaves de los elementos destacados se ajustarán para complementar el nuevo tono.
+
+Campos de la solicitud:
+1- Ubicación(Selector):
+  - Sede Santiago
+  - Santo Domingo
+  - Cibao Oriental, Nagua
+2- Tipo de solicitud:
+  - Desembolso
+  - Desviación
+3- Rubro presupuestal
+  - Gastos de servicios y suministros
+  - Plan de actividades
+  - Inversión
+4- Cuenta analítica:
+ - CA-0163 JUNTA DE DIRECTORES
+ - CA-0164 RECTORIA
+ - CA-0165 CASA SAMANA
+5- Presupuesto pre-aprobado:
+6- Monto a ejecutar   
+
