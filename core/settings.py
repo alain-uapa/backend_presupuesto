@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+from corsheaders.defaults import default_headers
 from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +28,7 @@ ALLOWED_HOSTS = [
     'abiotic-kenzie-braggadocian.ngrok-free.dev',
     'localhost',
     '127.0.0.1',
+    'aistudio.google.com'
 ]
 
 
@@ -58,6 +59,17 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "https://abiotic-kenzie-braggadocian.ngrok-free.dev",
     "http://localhost:3000", # La URL donde correrá tu React
+    'https://aistudio.google.com'
+]
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ngrok-skip-browser-warning',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.usercontent.goog",
+    "https://abiotic-kenzie-braggadocian.ngrok-free.dev"
 ]
 
 ROOT_URLCONF = 'core.urls'
