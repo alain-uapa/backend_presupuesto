@@ -7,11 +7,12 @@ from .models import SolicitudPresupuesto
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
 
-@login_required_json
+#@login_required_json
 def solicitudes_list(request):
     qs = SolicitudPresupuesto.objects.select_related(
        'colaborador', 'ubicacion', 'cuenta_analitica'
-    ).only('id',
+    )
+    """.only('id',
     
     # 2. Campos del Colaborador
     'colaborador__id', 
@@ -23,14 +24,22 @@ def solicitudes_list(request):
     # 4. Campos de Cuenta Analitica (Obligatorio si usas select_related)
     'cuenta_analitica__codigo',
     'cuenta_analitica__nombre')
+    """
+    qs = qs.all()
     # Lógica de filtrado según permisos
-    if request.user.is_superuser or request.user.groups.filter(name='Supervisor').exists():
-        qs = qs.all()
-    else:
-        qs = qs.filter(colaborador=request.user)
+    #if request.user.is_superuser or request.user.groups.filter(name='Supervisor').exists():
+    #    qs = qs.all()
+    #else:
+    #    qs = qs.filter(colaborador=request.user)
 
     # Transformamos el QuerySet a formato JSON (string)
-    serializer = BaseSerializer(qs)
+    exclude = [
+        'colaborador__password', 
+        'colaborador__is_staff',
+        'colaborador__is_superuser',
+        'colaborador__last_login'
+    ]
+    serializer = BaseSerializer(qs, exclude=exclude)
     return JsonResponse(serializer.serialize(), safe=False)
 
 @csrf_exempt # Solo si no estás enviando el token CSRF desde el frontend
@@ -64,6 +73,52 @@ def crear_solicitud(request):
                 "mensaje": "Solicitud creada con éxito",
                 "datos": serializer.serialize()[0]
             }, status=201)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+@csrf_exempt
+def editar_solicitud(request, pk):
+    if request.method == 'PUT':
+        try:
+            # 1. Buscar la solicitud existente
+            try:
+                solicitud = SolicitudPresupuesto.objects.get(pk=pk)
+            except SolicitudPresupuesto.DoesNotExist:
+                return JsonResponse({"error": "Solicitud no encontrada"}, status=404)
+
+            # 2. Seguridad: ¿Tiene permiso para editarla?
+            # (Ejemplo: Solo el dueño o un supervisor)
+            #if solicitud.colaborador != request.user and not request.user.is_superuser:
+            #     return JsonResponse({"error": "No tienes permiso para editar esta solicitud"}, status=403)
+
+            # 3. Leer los datos del JSON
+            data = json.loads(request.body)
+
+            # 4. Actualizar los campos (solo los que vengan en el JSON)
+            solicitud.titulo = data.get('titulo', solicitud.titulo)
+            solicitud.descripcion = data.get('descripcion', solicitud.descripcion)
+            solicitud.tipo_solicitud = data.get('tipo_solicitud', solicitud.tipo_solicitud)
+            solicitud.rubro_presupuestal = data.get('rubro_presupuestal', solicitud.rubro_presupuestal)
+            solicitud.presupuesto_pre_aprobado = data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado)
+            solicitud.monto_a_ejecutar = data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar)
+            # Actualización de llaves foráneas por ID
+            if 'ubicacion_id' in data:
+                solicitud.ubicacion_id = data.get('ubicacion_id')
+            if 'cuenta_analitica_id' in data:
+                solicitud.cuenta_analitica_id = data.get('cuenta_analitica_id')
+
+            # 5. Guardar cambios
+            solicitud.save()
+
+            # 6. Devolver el objeto actualizado
+            serializer = BaseSerializer([solicitud])
+            return JsonResponse({
+                "mensaje": "Solicitud actualizada con éxito",
+                "datos": serializer.serialize()[0]
+            })
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
