@@ -1,6 +1,17 @@
 from django.db import models
 from django.conf import settings
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User, Group
+
+@receiver(post_save, sender=User)
+def asignar_grupo_colaborador(sender, instance, created, **kwargs):
+    if created:
+        # Buscamos el grupo (asegúrate de que el nombre sea exacto)
+        grupo, _ = Group.objects.get_or_create(name='Colaborador')
+        instance.groups.add(grupo)
+        
 class Ubicacion(models.Model):
     nombre = models.CharField(max_length=100)
     

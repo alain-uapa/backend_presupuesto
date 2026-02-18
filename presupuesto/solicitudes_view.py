@@ -7,6 +7,13 @@ from .models import SolicitudPresupuesto
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
 
+
+def es_supervisor(user):
+    return user.groups.filter(name='Supervisor').exists() or user.is_superuser
+
+def es_colaborador(user):
+    return user.groups.filter(name='Colaborador').exists()
+
 #@login_required_json
 def solicitudes_list(request):
     qs = SolicitudPresupuesto.objects.select_related(
@@ -57,8 +64,8 @@ def crear_solicitud(request):
                 tipo_solicitud=data.get('tipo_solicitud'),
                 rubro_presupuestal=data.get('rubro_presupuestal'),
                 # Obtenemos las instancias de las FK por su ID
-                ubicacion_id=data.get('ubicacion'),
-                cuenta_analitica_id=data.get('cuenta_analitica'),
+                ubicacion_id=data.get('ubicacion_id'),
+                cuenta_analitica_id=data.get('cuenta_analitica_id'),
                 presupuesto_pre_aprobado=data.get('presupuesto_pre_aprobado'),
                 monto_a_ejecutar=data.get('monto_a_ejecutar'),
             )
@@ -124,3 +131,43 @@ def editar_solicitud(request, pk):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
+@csrf_exempt
+def cambiar_estado(request, pk):
+    if request.method == 'PATCH':
+        try:
+            # 1. Buscar la solicitud
+            try:
+                solicitud = SolicitudPresupuesto.objects.get(pk=pk)
+            except SolicitudPresupuesto.DoesNotExist:
+                return JsonResponse({"error": "Solicitud no encontrada"}, status=404)
+
+            # 2. Leer datos del JSON
+            data = json.loads(request.body)
+            nuevo_estado = data.get('status')
+            comentarios = data.get('comments', '')
+
+            if not nuevo_estado:
+                return JsonResponse({"error": "El campo 'status' es obligatorio"}, status=400)
+
+            # 3. Lógica de negocio para el estado
+            solicitud.estado = nuevo_estado # Asumiendo que el campo en tu modelo se llama 'estado'
+            
+            # Si es rechazada, guardamos el comentario en el campo específico
+            if nuevo_estado.upper() == 'RECHAZADA':
+                solicitud.observaciones_supervisor = comentarios
+            
+            # 4. Guardar cambios
+            solicitud.save()
+
+            # 5. Respuesta
+            serializer = BaseSerializer([solicitud])
+            return JsonResponse({
+                "mensaje": f"Estado actualizado a {nuevo_estado} con éxito",
+                "datos": serializer.serialize()[0]
+            })
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Método no permitido. Use PATCH"}, status=405)   
