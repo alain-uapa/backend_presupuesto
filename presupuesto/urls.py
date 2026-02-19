@@ -7,6 +7,7 @@ urlpatterns = [
     path('solicitudes/crear/', view.crear_solicitud, name='solicitudes_crear'),
     path('solicitudes/editar/<int:pk>/', view.editar_solicitud, name='solicitudes_editar'),
     path('solicitudes/status/<int:pk>/', view.cambiar_estado, name='cambiar_estado'),
+    path('solicitudes/delete/<int:pk>/', view.eliminar_solicitud, name='eliminar_solicitud'),
     path('ubicaciones/list/', ubicaciones_list, name='ubicaciones-list'),
     path('cuentas-analiticas/list/', cuentas_analiticas_list, name='cuentas-list'),  
 ]

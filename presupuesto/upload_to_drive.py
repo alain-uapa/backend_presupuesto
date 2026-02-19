@@ -1,0 +1,81 @@
+import json
+import os
+from django.conf import settings
+from googleapiclient.http import MediaIoBaseUpload
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from django.http import JsonResponse
+from core.utils.login_required import login_required_json 
+
+"""
+Sube cualquier tipo de archivo a Google Drive.
+archivo_django: El objeto que viene de request.FILES
+folder_id: El ID de la carpeta de Drive donde se guardará
+"""
+
+def authtenticate():
+    SERVICE_ACCOUNT_FILE = 'user-credentials-presupesto.json'
+    json_path = os.path.join(settings.BASE_DIR, 'user-credentials-presupesto.json')
+    
+    # Normaliza la ruta (limpia los ../..)
+    json_path = os.path.normpath(json_path)
+  
+    # Verificación de seguridad para depurar
+    if not os.path.exists(json_path):
+        raise FileNotFoundError(f"No se encontró el archivo de credenciales en: {json_path}")
+    SCOPES = ['https://www.googleapis.com/auth/drive']
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    return creds
+
+@login_required_json
+def uploadfile(request):
+    if request.method == 'POST' and request.FILES.get('archivo'):
+        archivo = request.FILES['archivo']
+        
+        # Validar extensiones permitidas (Opcional pero recomendado)
+        extensiones_permitidas = [
+            'application/pdf', 
+            'image/jpeg', 
+            'image/png', 
+            'application/msword', 
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+        
+        if archivo.content_type not in extensiones_permitidas:
+            return JsonResponse({"error": "Tipo de archivo no permitido"}, status=400)
+
+        # Llamamos a la función genérica
+        resultado = upload_to_drive(archivo, 'ID_DE_TU_CARPETA')
+        
+        return JsonResponse({
+            "mensaje": "Archivo subido con éxito",
+            "drive_id": resultado.get('id'),
+            "url": resultado.get('webViewLink')
+        })
+
+def upload_to_drive(archivo_django, folder_id):
+
+    creds = authtenticate()
+    service = build('drive', 'v3', credentials=creds)
+
+    # Django ya conoce el tipo de archivo en 'content_type'
+    mimetype = archivo_django.content_type 
+
+    file_metadata = {
+        'name': archivo_django.name,
+        'parents': [folder_id]
+    }
+    media = MediaIoBaseUpload(
+        archivo_django.file, 
+        mimetype=mimetype, # Aquí pasamos image/jpeg, application/pdf, etc.
+        resumable=True
+    )
+
+    file = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields='id, webViewLink'
+    ).execute()
+
+    return file

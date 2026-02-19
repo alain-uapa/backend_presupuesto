@@ -59,7 +59,8 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "https://*.usercontent.goog",
     "https://abiotic-kenzie-braggadocian.ngrok-free.dev",
-    "http://localhost:3000", # La URL donde correrá tu React
+    "http://localhost:3000", 
+    'http://127.0.0.1:3000',
     'https://aistudio.google.com'
 ]
 CORS_ALLOW_ALL_ORIGINS = True
@@ -72,8 +73,11 @@ CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = True   # Obligatorio porque ngrok usa HTTPS
 SESSION_COOKIE_SAMESITE = 'None'
+#CSRF_COOKIE_SAMESITE = 'None'
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    'http://127.0.0.1:3000',
     "https://*.usercontent.goog",
     "https://abiotic-kenzie-braggadocian.ngrok-free.dev"
 ]

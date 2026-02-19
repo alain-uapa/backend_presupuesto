@@ -69,3 +69,26 @@ class SolicitudPresupuesto(models.Model):
     
     def __str__(self):
         return f"{self.titulo} - {self.colaborador.get_full_name()}"
+
+class AdjuntoSolicitud(models.Model):
+    # Relación directa: Si se borra la solicitud, se borran las referencias de sus adjuntos
+    solicitud = models.ForeignKey(
+        SolicitudPresupuesto, 
+        on_delete=models.CASCADE, 
+        related_name='adjuntos'
+    )
+    
+    # Campos de metadata y Drive
+    nombre = models.CharField(max_length=255, verbose_name="Nombre del archivo")
+    drive_id = models.CharField(max_length=255, unique=True)
+    url_view = models.TextField(verbose_name="Enlace de visualización")
+    mime_type = models.CharField(max_length=100, verbose_name="Tipo de archivo")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nombre} - Solicitud {self.solicitud_id}"
+
+    class Meta:
+        db_table = 'AdjuntoSolicitud'
+        verbose_name = 'Adjunto de Solicitud'
+        verbose_name_plural = 'Adjuntos de Solicitudes'
