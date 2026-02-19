@@ -80,3 +80,15 @@ def upload_to_drive(archivo_django, folder_id):
     ).execute()
 
     return file
+
+def delete_from_drive(file_id):
+    """
+    Elimina un archivo de Google Drive dado su ID.
+    """
+    creds = authtenticate() # Tu función de autenticación
+    service = build('drive', 'v3', credentials=creds)
+    # Es importante usar supportsAllDrives=True porque estamos en un Shared Drive
+    service.files().delete(
+        fileId=file_id, 
+        supportsAllDrives=True
+    ).execute()

@@ -1,5 +1,6 @@
 import time
 import json
+from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core import serializers
 from django.contrib.auth.decorators import login_required
@@ -8,7 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import SolicitudPresupuesto, AdjuntoSolicitud
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
-from .upload_to_drive import upload_to_drive
+from .google_drive import upload_to_drive, delete_from_drive
 
 ID_FOLDER_DRIVE = '0AO2iR5vQLMy7Uk9PVA' #Presupuesto files
 def es_supervisor(user):
@@ -21,7 +22,7 @@ def es_colaborador(user):
 def solicitudes_list(request):
     qs = SolicitudPresupuesto.objects.select_related(
        'colaborador', 'ubicacion', 'cuenta_analitica'
-    )
+    ).prefetch_related('adjuntos')
     """.only('id',
     
     # 2. Campos del Colaborador
@@ -50,8 +51,19 @@ def solicitudes_list(request):
         'colaborador__last_login'
     ]
     serializer = BaseSerializer(qs, exclude=exclude)
+    data_serializada =  serializer.serialize() 
+    for item in data_serializada:
+        # Buscamos el objeto original en el queryset para sacar sus adjuntos
+        obj_original = next(x for x in qs if x.id == item['id'])
+        item['files'] = [
+            {
+                'id': a.id,
+                'nombre': a.nombre,
+                'url_view': a.url_view
+            } for a in obj_original.adjuntos.all()
+        ]
     #time.sleep(5)
-    return JsonResponse(serializer.serialize(), safe=False)
+    return JsonResponse(data_serializada, safe=False)
 
 @csrf_exempt # Solo si no estás enviando el token CSRF desde el frontend
 @login_required_json
@@ -116,46 +128,62 @@ def crear_solicitud(request):
 @csrf_exempt
 @login_required_json
 def editar_solicitud(request, pk):
-    if request.method == 'PUT':
+    # Obtenemos la solicitud o lanzamos 404 si no existe
+    solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
+    
+    if request.method == 'POST':
         try:
-            # 1. Buscar la solicitud existente
-            try:
-                solicitud = SolicitudPresupuesto.objects.get(pk=pk)
-            except SolicitudPresupuesto.DoesNotExist:
-                return JsonResponse({"error": "Solicitud no encontrada"}, status=404)
+            with transaction.atomic():
+                # --- 1. Parseo de datos ---
+                if 'multipart/form-data' in request.content_type:              
+                    data = request.POST                      
+                    archivos = request.FILES.getlist('files')                    
+                else:
+                    data = json.loads(request.body)
+                    archivos = []
 
-            # 2. Seguridad: ¿Tiene permiso para editarla?
-            # (Ejemplo: Solo el dueño o un supervisor)
-            #if solicitud.colaborador != request.user and not request.user.is_superuser:
-            #     return JsonResponse({"error": "No tienes permiso para editar esta solicitud"}, status=403)
+                # --- 2. Actualización de campos de la solicitud ---
+                # Usamos los datos nuevos o mantenemos los actuales si no vienen en el POST
+                solicitud.titulo = data.get('titulo', solicitud.titulo)
+                solicitud.descripcion = data.get('descripcion', solicitud.descripcion)
+                solicitud.tipo_solicitud = data.get('tipo_solicitud', solicitud.tipo_solicitud)
+                solicitud.rubro_presupuestal = data.get('rubro_presupuestal', solicitud.rubro_presupuestal)
+                
+                # Manejo de IDs y montos
+                if data.get('ubicacion_id'):
+                    solicitud.ubicacion_id = int(data.get('ubicacion_id'))
+                if data.get('cuenta_analitica_id'):
+                    solicitud.cuenta_analitica_id = int(data.get('cuenta_analitica_id'))
+                
+                solicitud.monto_a_ejecutar = float(data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar))
+                solicitud.presupuesto_pre_aprobado = float(data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado))
+                
+                # Validar y guardar cambios en el registro principal
+                solicitud.full_clean()
+                solicitud.save()
 
-            # 3. Leer los datos del JSON
-            data = json.loads(request.body)
+                # --- 3. Procesamiento de NUEVOS Adjuntos ---
+                # Al igual que en crear, si Drive falla, se deshacen los cambios del paso 2
+                for f in archivos:
+                    resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
+                    
+                    AdjuntoSolicitud.objects.create(
+                        solicitud=solicitud, # Asociamos a la misma solicitud
+                        nombre=f.name,
+                        drive_id=resultado_drive['id'],
+                        url_view=resultado_drive['webViewLink'],
+                        mime_type=f.content_type
+                    )
 
-            # 4. Actualizar los campos (solo los que vengan en el JSON)
-            solicitud.titulo = data.get('titulo', solicitud.titulo)
-            solicitud.descripcion = data.get('descripcion', solicitud.descripcion)
-            solicitud.tipo_solicitud = data.get('tipo_solicitud', solicitud.tipo_solicitud)
-            solicitud.rubro_presupuestal = data.get('rubro_presupuestal', solicitud.rubro_presupuestal)
-            solicitud.presupuesto_pre_aprobado = data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado)
-            solicitud.monto_a_ejecutar = data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar)
-            # Actualización de llaves foráneas por ID
-            if 'ubicacion_id' in data:
-                solicitud.ubicacion_id = data.get('ubicacion_id')
-            if 'cuenta_analitica_id' in data:
-                solicitud.cuenta_analitica_id = data.get('cuenta_analitica_id')
-
-            # 5. Guardar cambios
-            solicitud.save()
-
-            # 6. Devolver el objeto actualizado
-            serializer = BaseSerializer([solicitud])
-            return JsonResponse({
-                "mensaje": "Solicitud actualizada con éxito",
-                "datos": serializer.serialize()[0]
-            })
+                # --- 4. Respuesta ---
+                serializer = BaseSerializer([solicitud])
+                return JsonResponse({
+                    "mensaje": "Solicitud actualizada y archivos añadidos con éxito",
+                    "datos": serializer.serialize()[0]
+                }, status=200)
 
         except Exception as e:
+            # Rollback automático de los cambios en 'solicitud' si falla la subida a Drive
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
@@ -233,3 +261,33 @@ def eliminar_solicitud(request, pk):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido. Use DELETE"}, status=405)
+
+@csrf_exempt
+def eliminar_adjunto(request, pk):
+    if request.method == 'DELETE':
+        # Buscamos el registro del adjunto
+        adjunto = get_object_or_404(AdjuntoSolicitud, id=pk)
+        drive_id = adjunto.drive_id # Guardamos el ID antes de borrar el registro
+        print(drive_id)
+        try:
+            with transaction.atomic():
+                # 1. Primero intentamos eliminar de Google Drive
+                # Si esto falla, lanzará una excepción y no se borrará de la DB
+                delete_from_drive(drive_id)                
+                # 2. Si lo anterior tuvo éxito, borramos de la base de datos
+                adjunto.delete()
+
+            return JsonResponse({
+                "mensaje": "Archivo eliminado correctamente de la base de datos y Google Drive"
+            }, status=200)
+
+        except Exception as e:
+            # Si el error es 404, el archivo ya no está en Drive, 
+            # así que procedemos a borrar el registro de la DB de todos modos.
+            if "File not found" in str(e) or "404" in str(e):
+                adjunto.delete()
+                return JsonResponse({"mensaje": "El archivo no existía en Drive, registro local eliminado."}, status=200)
+            
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
