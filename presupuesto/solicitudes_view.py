@@ -1,5 +1,6 @@
 import time
 import json
+from django.db import transaction
 from django.core import serializers
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -9,7 +10,7 @@ from core.serializer import BaseSerializer
 from core.utils.login_required import login_required_json
 from .upload_to_drive import upload_to_drive
 
-ID_FOLDER_DRIVE = '1SHi0fIHmNJsyVs_J0bOYmZACrE566sqo' #Presupuesto files
+ID_FOLDER_DRIVE = '0AO2iR5vQLMy7Uk9PVA' #Presupuesto files
 def es_supervisor(user):
     return user.groups.filter(name='Supervisor').exists() or user.is_superuser
 
@@ -56,50 +57,58 @@ def solicitudes_list(request):
 @login_required_json
 def crear_solicitud(request):
     if request.method == 'POST':
+        # 1. Envolver todo en un bloque atómico
         try:
-            if 'multipart/form-data' in request.content_type:              
-                data = request.POST  
-                archivos = request.FILES.getlist('files') # 'documentos' es el nombre en React   \                           
-            else:
-                data = json.loads(request.body)
-                archivos = []
+            with transaction.atomic():
+                # --- Parseo de datos ---
+                if 'multipart/form-data' in request.content_type:              
+                    data = request.POST  
+                    archivos = request.FILES.getlist('files')
+                else:
+                    data = json.loads(request.body)
+                    archivos = []
 
-            # 2. Crear la instancia (Asignamos el colaborador del usuario logueado)
-            nueva_solicitud = SolicitudPresupuesto(
-                colaborador=request.user,
-                titulo=data.get('titulo'),
-                descripcion=data.get('descripcion'),
-                tipo_solicitud=data.get('tipo_solicitud'),
-                rubro_presupuestal=data.get('rubro_presupuestal'),
-                # Obtenemos las instancias de las FK por su ID
-                ubicacion_id=int(data.get('ubicacion_id')) if data.get('ubicacion_id') else None,
-                cuenta_analitica_id=int(data.get('cuenta_analitica_id')) if data.get('cuenta_analitica_id') else None,
-                monto_a_ejecutar=float(data.get('monto_a_ejecutar', 0)),
-                presupuesto_pre_aprobado=float(data.get('presupuesto_pre_aprobado', 0))
-            )         
-            # 3. Guardar en la base de datos
-            nueva_solicitud.save()
-            for f in archivos:
-                # Subida real a Google Drive usando tu función de Service Account
-                resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
-                
-                # Guardar la referencia en la base de datos
-                AdjuntoSolicitud.objects.create(
-                    solicitud=nueva_solicitud,
-                    nombre=f.name,
-                    drive_id=resultado_drive['id'],
-                    url_view=resultado_drive['webViewLink'],
-                    mime_type=f.content_type
+                # --- Creación del registro principal ---
+                nueva_solicitud = SolicitudPresupuesto(
+                    colaborador=request.user,
+                    titulo=data.get('titulo'),
+                    descripcion=data.get('descripcion'),
+                    tipo_solicitud=data.get('tipo_solicitud'),
+                    rubro_presupuestal=data.get('rubro_presupuestal'),
+                    ubicacion_id=int(data.get('ubicacion_id')) if data.get('ubicacion_id') else None,
+                    cuenta_analitica_id=int(data.get('cuenta_analitica_id')) if data.get('cuenta_analitica_id') else None,
+                    monto_a_ejecutar=float(data.get('monto_a_ejecutar', 0)),
+                    presupuesto_pre_aprobado=float(data.get('presupuesto_pre_aprobado', 0))
                 )
-            # 4. Devolver la solicitud creada (usando tu serializer para confirmación)
-            # Pasamos una lista con el objeto para que el serializer funcione
-            serializer = BaseSerializer([nueva_solicitud])
-            return JsonResponse({
-                "mensaje": "Solicitud creada con éxito",
-                "datos": serializer.serialize()[0]
-            }, status=201)
+                
+                # Validar y guardar (Si falla aquí, no se llega a Drive)
+                nueva_solicitud.full_clean()
+                nueva_solicitud.save()
+
+                # --- Procesamiento de Adjuntos ---
+                for f in archivos:
+                    # Si upload_to_drive falla (ej. error 403), lanzará una excepción
+                    # y transaction.atomic hará rollback de 'nueva_solicitud' automáticamente.
+                    resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
+                    
+                    AdjuntoSolicitud.objects.create(
+                        solicitud=nueva_solicitud,
+                        nombre=f.name,
+                        drive_id=resultado_drive['id'],
+                        url_view=resultado_drive['webViewLink'],
+                        mime_type=f.content_type
+                    )
+
+                # --- Respuesta Final ---
+                serializer = BaseSerializer([nueva_solicitud])
+                return JsonResponse({
+                    "mensaje": "Solicitud y adjuntos creados con éxito",
+                    "datos": serializer.serialize()[0]
+                }, status=201)
 
         except Exception as e:
+            # Al capturar la excepción aquí, Django ya hizo el rollback de la DB
+            # por haber salido del bloque 'with transaction.atomic()' con un error.
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)

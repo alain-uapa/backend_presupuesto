@@ -71,11 +71,12 @@ def upload_to_drive(archivo_django, folder_id):
         mimetype=mimetype, # Aquí pasamos image/jpeg, application/pdf, etc.
         resumable=True
     )
-
+    
     file = service.files().create(
         body=file_metadata,
         media_body=media,
-        fields='id, webViewLink'
+        fields='id, webViewLink',
+        supportsAllDrives=True
     ).execute()
 
     return file
