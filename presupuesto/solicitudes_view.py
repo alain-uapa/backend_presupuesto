@@ -130,8 +130,9 @@ def crear_solicitud(request):
                 'id': nueva_solicitud.id,
                 'titulo': nueva_solicitud.titulo,
                 'solicitante': nueva_solicitud.colaborador.get_full_name(),
+                'sede': str(nueva_solicitud.ubicacion),
                 'monto_a_ejecutar': nueva_solicitud.monto_a_ejecutar,
-                'url_sistema': utils.generar_url_frontend(f"/solicitudes/{nueva_solicitud.id}")
+                'url_sistema': utils.generar_url_frontend(f"/request/{nueva_solicitud.id}")
             }
             send_email(
                 subject='Nueva Solicitud de Presupuesto',
@@ -154,7 +155,7 @@ def editar_solicitud(request, pk):
         return JsonResponse({"error": "Método no permitido"}, status=405)    
     try:
         with transaction.atomic():
-            solicitud_editada = procesar_datos_solicitud(request, solicitud=solicitud)
+            solicitud_editada = procesar_datos_solicitud(request, solicitud=solicitud)            
             serializer = BaseSerializer([solicitud_editada])
             return JsonResponse({"mensaje": "Actualizada con éxito", "datos": serializer.serialize()[0]}, status=200)
     except Exception as e:
