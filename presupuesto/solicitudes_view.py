@@ -6,7 +6,9 @@ from django.core import serializers
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
-from .models import SolicitudPresupuesto, AdjuntoSolicitud
+
+from presupuesto import utils
+from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Ubicacion
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
 from .google_drive import upload_to_drive, delete_from_drive
@@ -111,7 +113,24 @@ def crear_solicitud(request):
                         url_view=resultado_drive['webViewLink'],
                         mime_type=f.content_type
                     )
-
+                email_template = 'presupuesto/nueva_solicitud.html'       
+                frontend_url = utils.generar_url_frontend(f"/solicitudes/{nueva_solicitud.id}")         
+                context={
+                    'id': nueva_solicitud.id,
+                    'titulo': nueva_solicitud.titulo,
+                    'solicitante': nueva_solicitud.colaborador.get_full_name(),
+                    'sede': str(nueva_solicitud.ubicacion),
+                    'monto_a_ejecutar': nueva_solicitud.monto_a_ejecutar,
+                    'url_sistema': frontend_url
+                }
+                gestor = Configuracion.get_value('GESTOR')
+                send_to_list = [gestor]                
+                send_email(
+                    subject='Solicitud de Presupuesto', 
+                    send_to_list=send_to_list, 
+                    template=email_template, 
+                    context=context,                
+                )           
                 # --- Respuesta Final ---
                 serializer = BaseSerializer([nueva_solicitud])
                 return JsonResponse({
@@ -230,9 +249,13 @@ def cambiar_estado(request, pk):
                 'url_sistema': request.build_absolute_uri(f"/solicitudes/{solicitud.id}")
             }
             #TODO: bcc_list
+            send_to_list = [solicitud.colaborador.email]
+            gestor = Configuracion.get_value('GESTOR')
+            if request.user.email != gestor:
+                send_to_list.append(gestor)
             send_email(
                 subject='Solicitud de Presupuesto', 
-                send_to_list=[solicitud.colaborador.email], 
+                send_to_list=send_to_list, 
                 template=email_template, 
                 context=context,                
             )           
