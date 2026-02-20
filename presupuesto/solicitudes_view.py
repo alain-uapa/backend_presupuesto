@@ -10,6 +10,7 @@ from .models import SolicitudPresupuesto, AdjuntoSolicitud
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
 from .google_drive import upload_to_drive, delete_from_drive
+from emails.mailer import send_email
 
 ID_FOLDER_DRIVE = '0AO2iR5vQLMy7Uk9PVA' #Presupuesto files
 def es_supervisor(user):
@@ -218,7 +219,22 @@ def cambiar_estado(request, pk):
             solicitud.save()
 
             # 5. Respuesta
-            serializer = BaseSerializer([solicitud])
+            serializer = BaseSerializer([solicitud])      
+            email_template = 'presupuesto/cambio_estado.html'
+            context={
+                'id': solicitud.id,
+                'solicitante': solicitud.colaborador.get_full_name(),
+                'titulo': solicitud.titulo,
+                'monto_a_ejecutar': solicitud.monto_a_ejecutar,
+                'url_sistema': request.build_absolute_uri(f"/solicitudes/{solicitud.id}")
+            }
+            #TODO: bcc_list
+            send_email(
+                subject='Solicitud de Presupuesto', 
+                send_to_list=[solicitud.colaborador.get_full_name()], 
+                template=email_template, 
+                context=context,                
+            )           
             return JsonResponse({
                 "mensaje": f"Estado actualizado a {nuevo_estado} con éxito",
                 "datos": serializer.serialize()[0]

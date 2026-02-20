@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-    'presupuesto'
+    'presupuesto',
+    'emails'
 ]
 
 MIDDLEWARE = [
@@ -158,7 +159,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 try:
     from .local_settings import *
     # Si la importación tiene éxito, estamos en LOCAL
@@ -172,3 +172,5 @@ finally:
     # Esto imprime un mensaje elegante en la terminal al iniciar
     reset_color = "\033[0m"
     print(f"\n{COLOR_MSG}>>> [SISTEMA PRESUPUESTO] Conectado a: {ENTORNO}{reset_color}\n")
+
+from emails.config import *
