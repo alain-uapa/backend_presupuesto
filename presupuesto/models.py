@@ -93,6 +93,29 @@ class AdjuntoSolicitud(models.Model):
         verbose_name = 'Adjunto de Solicitud'
         verbose_name_plural = 'Adjuntos de Solicitudes'
 
+class Configuracion(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    valor = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Configuración"
+        verbose_name_plural = "Configuraciones"
+
+    @classmethod
+    def get_value(cls, nombre, default=None):
+        """
+        Busca una configuración por nombre y devuelve su valor.
+        Uso: Configuracion.get_value('GOOGLE_DRIVE_JSON')
+        """
+        config = cls.objects.filter(nombre=nombre).first()
+        if config:
+            return config.valor
+        return default
+
+    def __str__(self):
+        return self.nombre
+
 class GoogleConfig(models.Model):
     nombre = models.CharField(max_length=100, default="Principal")
     # JSONField es ideal para guardar el contenido completo del archivo .json
