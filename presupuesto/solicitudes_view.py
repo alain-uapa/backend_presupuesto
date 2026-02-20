@@ -14,7 +14,7 @@ from core.utils.login_required import login_required_json
 from .google_drive import upload_to_drive, delete_from_drive
 from emails.mailer import send_email
 
-ID_FOLDER_DRIVE = '0AO2iR5vQLMy7Uk9PVA' #Presupuesto files
+#Presupuesto files
 def es_supervisor(user):
     return user.groups.filter(name='Supervisor').exists() or user.is_superuser
 
@@ -101,6 +101,7 @@ def crear_solicitud(request):
                 nueva_solicitud.save()
 
                 # --- Procesamiento de Adjuntos ---
+                ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
                 for f in archivos:
                     # Si upload_to_drive falla (ej. error 403), lanzará una excepción
                     # y transaction.atomic hará rollback de 'nueva_solicitud' automáticamente.
@@ -184,6 +185,7 @@ def editar_solicitud(request, pk):
 
                 # --- 3. Procesamiento de NUEVOS Adjuntos ---
                 # Al igual que en crear, si Drive falla, se deshacen los cambios del paso 2
+                ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
                 for f in archivos:
                     resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
                     
