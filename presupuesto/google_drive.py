@@ -6,7 +6,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from django.http import JsonResponse
 from core.utils.login_required import login_required_json 
-
+from presupuesto.models import GoogleConfig
 """
 Sube cualquier tipo de archivo a Google Drive.
 archivo_django: El objeto que viene de request.FILES
@@ -14,18 +14,23 @@ folder_id: El ID de la carpeta de Drive donde se guardará
 """
 
 def authtenticate():
-    SERVICE_ACCOUNT_FILE = 'user-credentials-presupesto.json'
-    json_path = os.path.join(settings.BASE_DIR, 'user-credentials-presupesto.json')
+    #SERVICE_ACCOUNT_FILE = 'amiable-hydra-487802-a4-32ee1359e589.json'
+    #json_path = os.path.join(settings.BASE_DIR, SERVICE_ACCOUNT_FILE)
     
     # Normaliza la ruta (limpia los ../..)
-    json_path = os.path.normpath(json_path)
-  
+    #json_path = os.path.normpath(json_path)
     # Verificación de seguridad para depurar
-    if not os.path.exists(json_path):
-        raise FileNotFoundError(f"No se encontró el archivo de credenciales en: {json_path}")
+    #if not os.path.exists(json_path):
+    #    raise FileNotFoundError(f"No se encontró el archivo de credenciales en: {json_path}")
+    # Obtenemos la configuración activa
+    config = GoogleConfig.objects.filter(activo=True).first()
+    
+    if not config:
+        raise ValueError("No hay una configuración de Google Drive activa en la BD")
+    print(config.credentials_json)
     SCOPES = ['https://www.googleapis.com/auth/drive']
-    creds = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    creds = service_account.Credentials.from_service_account_info(
+        config.credentials_json, scopes=SCOPES)
     return creds
 
 @login_required_json

@@ -92,3 +92,12 @@ class AdjuntoSolicitud(models.Model):
         db_table = 'AdjuntoSolicitud'
         verbose_name = 'Adjunto de Solicitud'
         verbose_name_plural = 'Adjuntos de Solicitudes'
+
+class GoogleConfig(models.Model):
+    nombre = models.CharField(max_length=100, default="Principal")
+    # JSONField es ideal para guardar el contenido completo del archivo .json
+    credentials_json = models.JSONField(help_text="Pega aquí el contenido completo del JSON de la Service Account")
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre

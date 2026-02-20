@@ -285,7 +285,6 @@ def eliminar_adjunto(request, pk):
         # Buscamos el registro del adjunto
         adjunto = get_object_or_404(AdjuntoSolicitud, id=pk)
         drive_id = adjunto.drive_id # Guardamos el ID antes de borrar el registro
-        print(drive_id)
         try:
             with transaction.atomic():
                 # 1. Primero intentamos eliminar de Google Drive
@@ -303,8 +302,7 @@ def eliminar_adjunto(request, pk):
             # así que procedemos a borrar el registro de la DB de todos modos.
             if "File not found" in str(e) or "404" in str(e):
                 adjunto.delete()
-                return JsonResponse({"mensaje": "El archivo no existía en Drive, registro local eliminado."}, status=200)
-            
+                return JsonResponse({"mensaje": "El archivo no existía en Drive, registro local eliminado."}, status=200)     
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
