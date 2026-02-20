@@ -1,0 +1,6 @@
+ERROR 2026-02-20 12:38:41,169 logging Exception: Prueba de error
+Traceback: Traceback (most recent call last):
+  File "/home/alain/Uapa/Projects/Presupuesto/presupuesto/solicitudes_view.py", line 156, in editar_solicitud
+    raise Exception("Prueba de error")
+Exception: Prueba de error
+

@@ -13,6 +13,7 @@ from core.serializer import BaseSerializer
 from core.utils.login_required import login_required_json
 from .google_drive import upload_to_drive, delete_from_drive
 from emails.mailer import send_email
+from core.utils.logging import log_error
 
 #Presupuesto files
 def es_supervisor(user):
@@ -142,6 +143,7 @@ def crear_solicitud(request):
             serializer = BaseSerializer([nueva_solicitud])
             return JsonResponse({"mensaje": "Creada con éxito", "datos": serializer.serialize()[0]}, status=201)
     except Exception as e:
+        log_error(request, e, {'funcion': 'crear_solicitud'})
         return JsonResponse({"error": str(e)}, status=400)
 
 @csrf_exempt
@@ -149,14 +151,14 @@ def crear_solicitud(request):
 def editar_solicitud(request, pk):
     solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
     if request.method != 'POST':
-        return JsonResponse({"error": "Método no permitido"}, status=405)
-
+        return JsonResponse({"error": "Método no permitido"}, status=405)    
     try:
         with transaction.atomic():
             solicitud_editada = procesar_datos_solicitud(request, solicitud=solicitud)
             serializer = BaseSerializer([solicitud_editada])
             return JsonResponse({"mensaje": "Actualizada con éxito", "datos": serializer.serialize()[0]}, status=200)
     except Exception as e:
+        log_error(request, e, {'funcion': 'editar_solicitud', 'pk': pk})
         return JsonResponse({"error": str(e)}, status=400)
 
 @csrf_exempt
@@ -216,6 +218,7 @@ def cambiar_estado(request, pk):
             })
 
         except Exception as e:
+            log_error(request, e, {'funcion': 'cambiar_estado', 'pk': pk})
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido. Use PATCH"}, status=405)   
@@ -249,6 +252,7 @@ def eliminar_solicitud(request, pk):
             return JsonResponse({"mensaje": "Solicitud eliminada con éxito"}, status=200)
 
         except Exception as e:
+            log_error(request, e, {'funcion': 'eliminar_solicitud', 'pk': pk})
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido. Use DELETE"}, status=405)
@@ -277,6 +281,7 @@ def eliminar_adjunto(request, pk):
             if "File not found" in str(e) or "404" in str(e):
                 adjunto.delete()
                 return JsonResponse({"mensaje": "El archivo no existía en Drive, registro local eliminado."}, status=200)     
+            log_error(request, e, {'funcion': 'eliminar_adjunto', 'pk': pk})
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
