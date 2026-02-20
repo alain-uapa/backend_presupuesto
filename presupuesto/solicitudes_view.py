@@ -226,12 +226,13 @@ def cambiar_estado(request, pk):
                 'solicitante': solicitud.colaborador.get_full_name(),
                 'titulo': solicitud.titulo,
                 'monto_a_ejecutar': solicitud.monto_a_ejecutar,
+                'estado': nuevo_estado.upper(),
                 'url_sistema': request.build_absolute_uri(f"/solicitudes/{solicitud.id}")
             }
             #TODO: bcc_list
             send_email(
                 subject='Solicitud de Presupuesto', 
-                send_to_list=[solicitud.colaborador.get_full_name()], 
+                send_to_list=[solicitud.colaborador.email], 
                 template=email_template, 
                 context=context,                
             )           
