@@ -200,7 +200,7 @@ def cambiar_estado(request, pk):
                 'titulo': solicitud.titulo,
                 'monto_a_ejecutar': solicitud.monto_a_ejecutar,
                 'estado': nuevo_estado.upper(),
-                'url_sistema': request.build_absolute_uri(f"/solicitudes/{solicitud.id}")
+                'url_sistema': utils.generar_url_frontend(f"/request/{solicitud.id}")
             }
             #TODO: bcc_list
             send_to_list = [solicitud.colaborador.email]
