@@ -21,6 +21,52 @@ def es_supervisor(user):
 def es_colaborador(user):
     return user.groups.filter(name='Colaborador').exists()
 
+def procesar_datos_solicitud(request, solicitud=None):
+    """
+    Lógica compartida para guardar o actualizar una solicitud.
+    Si solicitud=None, crea una nueva.
+    """
+    if 'multipart/form-data' in request.content_type:
+        data = request.POST
+        archivos = request.FILES.getlist('files')
+    else:
+        data = json.loads(request.body)
+        archivos = []
+
+    # Si no existe la solicitud, la instanciamos
+    if not solicitud:
+        solicitud = SolicitudPresupuesto(colaborador=request.user)
+
+    # Mapeo de campos (Crear o Editar)
+    solicitud.titulo = data.get('titulo', solicitud.titulo)
+    solicitud.descripcion = data.get('descripcion', solicitud.descripcion)
+    solicitud.tipo_solicitud = data.get('tipo_solicitud', solicitud.tipo_solicitud)
+    solicitud.rubro_presupuestal = data.get('rubro_presupuestal', solicitud.rubro_presupuestal)
+    
+    if data.get('ubicacion_id'):
+        solicitud.ubicacion_id = int(data.get('ubicacion_id'))
+    if data.get('cuenta_analitica_id'):
+        solicitud.cuenta_analitica_id = int(data.get('cuenta_analitica_id'))
+    
+    solicitud.monto_a_ejecutar = float(data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar))
+    solicitud.presupuesto_pre_aprobado = float(data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado))
+
+    solicitud.full_clean()
+    solicitud.save()
+
+    # Procesar archivos en Drive
+    ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
+    for f in archivos:
+        resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
+        AdjuntoSolicitud.objects.create(
+            solicitud=solicitud,
+            nombre=f.name,
+            drive_id=resultado_drive['id'],
+            url_view=resultado_drive['webViewLink'],
+            mime_type=f.content_type
+        )
+    return solicitud
+
 @login_required_json
 def solicitudes_list(request):
     qs = SolicitudPresupuesto.objects.select_related(
@@ -68,147 +114,50 @@ def solicitudes_list(request):
     #time.sleep(5)
     return JsonResponse(data_serializada, safe=False)
 
-@csrf_exempt # Solo si no estás enviando el token CSRF desde el frontend
+@csrf_exempt
 @login_required_json
 def crear_solicitud(request):
-    if request.method == 'POST':
-        # 1. Envolver todo en un bloque atómico
-        try:
-            with transaction.atomic():
-                # --- Parseo de datos ---
-                if 'multipart/form-data' in request.content_type:              
-                    data = request.POST  
-                    archivos = request.FILES.getlist('files')
-                else:
-                    data = json.loads(request.body)
-                    archivos = []
+    if request.method != 'POST':
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+    
+    try:
+        with transaction.atomic():
+            nueva_solicitud = procesar_datos_solicitud(request)
+            
+            # --- Notificación solo al crear ---
+            context = {
+                'id': nueva_solicitud.id,
+                'titulo': nueva_solicitud.titulo,
+                'solicitante': nueva_solicitud.colaborador.get_full_name(),
+                'monto_a_ejecutar': nueva_solicitud.monto_a_ejecutar,
+                'url_sistema': utils.generar_url_frontend(f"/solicitudes/{nueva_solicitud.id}")
+            }
+            send_email(
+                subject='Nueva Solicitud de Presupuesto',
+                send_to_list=[Configuracion.get_value('GESTOR')],
+                template='presupuesto/nueva_solicitud.html',
+                context=context
+            )
 
-                # --- Creación del registro principal ---
-                nueva_solicitud = SolicitudPresupuesto(
-                    colaborador=request.user,
-                    titulo=data.get('titulo'),
-                    descripcion=data.get('descripcion'),
-                    tipo_solicitud=data.get('tipo_solicitud'),
-                    rubro_presupuestal=data.get('rubro_presupuestal'),
-                    ubicacion_id=int(data.get('ubicacion_id')) if data.get('ubicacion_id') else None,
-                    cuenta_analitica_id=int(data.get('cuenta_analitica_id')) if data.get('cuenta_analitica_id') else None,
-                    monto_a_ejecutar=float(data.get('monto_a_ejecutar', 0)),
-                    presupuesto_pre_aprobado=float(data.get('presupuesto_pre_aprobado', 0))
-                )
-                
-                # Validar y guardar (Si falla aquí, no se llega a Drive)
-                nueva_solicitud.full_clean()
-                nueva_solicitud.save()
-
-                # --- Procesamiento de Adjuntos ---
-                ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
-                for f in archivos:
-                    # Si upload_to_drive falla (ej. error 403), lanzará una excepción
-                    # y transaction.atomic hará rollback de 'nueva_solicitud' automáticamente.
-                    resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
-                    
-                    AdjuntoSolicitud.objects.create(
-                        solicitud=nueva_solicitud,
-                        nombre=f.name,
-                        drive_id=resultado_drive['id'],
-                        url_view=resultado_drive['webViewLink'],
-                        mime_type=f.content_type
-                    )
-                email_template = 'presupuesto/nueva_solicitud.html'       
-                frontend_url = utils.generar_url_frontend(f"/solicitudes/{nueva_solicitud.id}")         
-                context={
-                    'id': nueva_solicitud.id,
-                    'titulo': nueva_solicitud.titulo,
-                    'solicitante': nueva_solicitud.colaborador.get_full_name(),
-                    'sede': str(nueva_solicitud.ubicacion),
-                    'monto_a_ejecutar': nueva_solicitud.monto_a_ejecutar,
-                    'url_sistema': frontend_url
-                }
-                gestor = Configuracion.get_value('GESTOR')
-                send_to_list = [gestor]                
-                send_email(
-                    subject='Solicitud de Presupuesto', 
-                    send_to_list=send_to_list, 
-                    template=email_template, 
-                    context=context,                
-                )           
-                # --- Respuesta Final ---
-                serializer = BaseSerializer([nueva_solicitud])
-                return JsonResponse({
-                    "mensaje": "Solicitud y adjuntos creados con éxito",
-                    "datos": serializer.serialize()[0]
-                }, status=201)
-
-        except Exception as e:
-            # Al capturar la excepción aquí, Django ya hizo el rollback de la DB
-            # por haber salido del bloque 'with transaction.atomic()' con un error.
-            return JsonResponse({"error": str(e)}, status=400)
-
-    return JsonResponse({"error": "Método no permitido"}, status=405)
+            serializer = BaseSerializer([nueva_solicitud])
+            return JsonResponse({"mensaje": "Creada con éxito", "datos": serializer.serialize()[0]}, status=201)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
 @csrf_exempt
 @login_required_json
 def editar_solicitud(request, pk):
-    # Obtenemos la solicitud o lanzamos 404 si no existe
     solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
-    
-    if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                # --- 1. Parseo de datos ---
-                if 'multipart/form-data' in request.content_type:              
-                    data = request.POST                      
-                    archivos = request.FILES.getlist('files')                    
-                else:
-                    data = json.loads(request.body)
-                    archivos = []
+    if request.method != 'POST':
+        return JsonResponse({"error": "Método no permitido"}, status=405)
 
-                # --- 2. Actualización de campos de la solicitud ---
-                # Usamos los datos nuevos o mantenemos los actuales si no vienen en el POST
-                solicitud.titulo = data.get('titulo', solicitud.titulo)
-                solicitud.descripcion = data.get('descripcion', solicitud.descripcion)
-                solicitud.tipo_solicitud = data.get('tipo_solicitud', solicitud.tipo_solicitud)
-                solicitud.rubro_presupuestal = data.get('rubro_presupuestal', solicitud.rubro_presupuestal)
-                
-                # Manejo de IDs y montos
-                if data.get('ubicacion_id'):
-                    solicitud.ubicacion_id = int(data.get('ubicacion_id'))
-                if data.get('cuenta_analitica_id'):
-                    solicitud.cuenta_analitica_id = int(data.get('cuenta_analitica_id'))
-                
-                solicitud.monto_a_ejecutar = float(data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar))
-                solicitud.presupuesto_pre_aprobado = float(data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado))
-                
-                # Validar y guardar cambios en el registro principal
-                solicitud.full_clean()
-                solicitud.save()
-
-                # --- 3. Procesamiento de NUEVOS Adjuntos ---
-                # Al igual que en crear, si Drive falla, se deshacen los cambios del paso 2
-                ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
-                for f in archivos:
-                    resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
-                    
-                    AdjuntoSolicitud.objects.create(
-                        solicitud=solicitud, # Asociamos a la misma solicitud
-                        nombre=f.name,
-                        drive_id=resultado_drive['id'],
-                        url_view=resultado_drive['webViewLink'],
-                        mime_type=f.content_type
-                    )
-
-                # --- 4. Respuesta ---
-                serializer = BaseSerializer([solicitud])
-                return JsonResponse({
-                    "mensaje": "Solicitud actualizada y archivos añadidos con éxito",
-                    "datos": serializer.serialize()[0]
-                }, status=200)
-
-        except Exception as e:
-            # Rollback automático de los cambios en 'solicitud' si falla la subida a Drive
-            return JsonResponse({"error": str(e)}, status=400)
-
-    return JsonResponse({"error": "Método no permitido"}, status=405)
+    try:
+        with transaction.atomic():
+            solicitud_editada = procesar_datos_solicitud(request, solicitud=solicitud)
+            serializer = BaseSerializer([solicitud_editada])
+            return JsonResponse({"mensaje": "Actualizada con éxito", "datos": serializer.serialize()[0]}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
 @csrf_exempt
 @login_required_json                                                                                                                                                                                                                                                                                
