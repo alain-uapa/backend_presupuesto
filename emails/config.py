@@ -7,4 +7,4 @@ EMAIL_HOST_PASSWORD = 'uwjxlbazgxordpvp'
 DEFAULT_FROM_EMAIL = 'Solicitud de Presupuesto'
 
 # Imprimir en la terminal
-#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

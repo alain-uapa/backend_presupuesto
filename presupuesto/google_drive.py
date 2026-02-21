@@ -27,7 +27,7 @@ def authtenticate():
     
     if not config:
         raise ValueError("No hay una configuración de Google Drive activa en la BD")
-    print(config.credentials_json)
+
     SCOPES = ['https://www.googleapis.com/auth/drive']
     creds = service_account.Credentials.from_service_account_info(
         config.credentials_json, scopes=SCOPES)

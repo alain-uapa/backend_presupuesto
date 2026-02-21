@@ -109,7 +109,8 @@ def solicitudes_list(request):
             {
                 'id': a.id,
                 'nombre': a.nombre,
-                'url_view': a.url_view
+                'url_view': a.url_view,
+                'es_certificado': a.es_certificado
             } for a in obj_original.adjuntos.all()
         ]
     #time.sleep(5)
@@ -286,3 +287,38 @@ def eliminar_adjunto(request, pk):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
+@csrf_exempt
+@login_required_json
+def upload_certificado(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+    
+    try:
+        solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
+        archivos = request.FILES.getlist('files')
+        
+        if not archivos:
+            return JsonResponse({"error": "No se enviaron archivos"}, status=400)
+        
+        ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
+        # Codigo copiado de otra función. En este caso sólo será un archivo
+        with transaction.atomic():
+            for f in archivos:
+                resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
+                adjunto = AdjuntoSolicitud.objects.create(
+                    solicitud=solicitud,
+                    nombre=f.name,
+                    drive_id=resultado_drive['id'],
+                    url_view=resultado_drive['webViewLink'],
+                    mime_type=f.content_type,
+                    es_certificado=True
+                )
+
+        return JsonResponse({
+            "mensaje": "Certificado subido con éxito"
+        }, status=201)
+    
+    except Exception as e:
+        log_error(request, e, {'funcion': 'upload_certificado', 'pk': pk})
+        return JsonResponse({"error": str(e)}, status=400)

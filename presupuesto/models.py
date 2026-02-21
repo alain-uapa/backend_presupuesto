@@ -61,7 +61,7 @@ class SolicitudPresupuesto(models.Model):
     estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='PENDIENTE')
     # Nombre más apropiado para el motivo de rechazo
     observaciones_supervisor = models.TextField(blank=True, null=True, verbose_name="Observaciones de Revisión")
-
+  
     @property
     def get_nombre_colaborador(self):
         # get_full_name() es un método estándar de Django que une first_name y last_name
@@ -83,8 +83,8 @@ class AdjuntoSolicitud(models.Model):
     drive_id = models.CharField(max_length=255, unique=True)
     url_view = models.TextField(verbose_name="Enlace de visualización")
     mime_type = models.CharField(max_length=100, verbose_name="Tipo de archivo")
+    es_certificado = models.BooleanField(default=False, verbose_name="Es certificado")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return f"{self.nombre} - Solicitud {self.solicitud_id}"
 
