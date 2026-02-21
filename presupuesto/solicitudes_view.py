@@ -1,5 +1,6 @@
 import time
 import json
+import itertools
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core import serializers
@@ -70,30 +71,19 @@ def procesar_datos_solicitud(request, solicitud=None):
 
 @login_required_json
 def solicitudes_list(request):
-    qs = SolicitudPresupuesto.objects.select_related(
+    base_qs = SolicitudPresupuesto.objects.select_related(
        'colaborador', 'ubicacion', 'cuenta_analitica'
     ).prefetch_related('adjuntos')
-    """.only('id',
     
-    # 2. Campos del Colaborador
-    'colaborador__id', 
-    'colaborador__first_name', 
-    
-    # 3. Campos de Ubicacion (Obligatorio si usas select_related)
-    'ubicacion__nombre', 
-    
-    # 4. Campos de Cuenta Analitica (Obligatorio si usas select_related)
-    'cuenta_analitica__codigo',
-    'cuenta_analitica__nombre')
-    """
-    qs = qs.all()
-    # Lógica de filtrado según permisos
     if request.user.is_superuser or request.user.groups.filter(name='Supervisor').exists():
-       qs = qs.all()
+        qs_pendientes = base_qs.filter(estado='PENDIENTE').order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').order_by('-fecha_solicitud')
     else:
-       qs = qs.filter(colaborador=request.user)
+        qs_pendientes = base_qs.filter(estado='PENDIENTE', colaborador=request.user).order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(colaborador=request.user).order_by('-fecha_solicitud')
+    
+    qs = list(itertools.chain(qs_pendientes, qs_otras))
 
-    # Transformamos el QuerySet a formato JSON (string)
     exclude = [
         'colaborador__password', 
         'colaborador__is_staff',
@@ -103,7 +93,6 @@ def solicitudes_list(request):
     serializer = BaseSerializer(qs, exclude=exclude)
     data_serializada =  serializer.serialize() 
     for item in data_serializada:
-        # Buscamos el objeto original en el queryset para sacar sus adjuntos
         obj_original = next(x for x in qs if x.id == item['id'])
         item['files'] = [
             {
@@ -113,7 +102,6 @@ def solicitudes_list(request):
                 'es_certificado': a.es_certificado
             } for a in obj_original.adjuntos.all()
         ]
-    #time.sleep(5)
     return JsonResponse(data_serializada, safe=False)
 
 @csrf_exempt
