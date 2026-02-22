@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from weasyprint import HTML
 from core.utils.logging import log_error
-from .models import SolicitudPresupuesto, Configuracion
+from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud
 from .google_drive import upload_to_drive
 from datetime import datetime
 
@@ -54,6 +54,15 @@ def generar_certificado_pdf(request, pk):
             raise ValueError("ID_FOLDER_DRIVE no configurado")
         
         resultado_drive = upload_to_drive(archivo_drive, ID_FOLDER_DRIVE, mimetype='application/pdf')
+        
+        AdjuntoSolicitud.objects.create(
+            solicitud=solicitud,
+            nombre=f"certificacion_{pk}.pdf",
+            drive_id=resultado_drive['id'],
+            url_view=resultado_drive['webViewLink'],
+            mime_type='application/pdf',
+            es_certificado=True
+        )
         
         return JsonResponse({
             'drive_id': resultado_drive['id'],
