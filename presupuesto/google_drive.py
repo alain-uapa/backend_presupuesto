@@ -59,13 +59,13 @@ def uploadfile(request):
             "url": resultado.get('webViewLink')
         })
 
-def upload_to_drive(archivo_django, folder_id):
+def upload_to_drive(archivo_django, folder_id, mimetype=None):
 
     creds = authtenticate()
     service = build('drive', 'v3', credentials=creds)
 
-    # Django ya conoce el tipo de archivo en 'content_type'
-    mimetype = archivo_django.content_type 
+    if mimetype is None:
+        mimetype = archivo_django.content_type 
 
     file_metadata = {
         'name': archivo_django.name,

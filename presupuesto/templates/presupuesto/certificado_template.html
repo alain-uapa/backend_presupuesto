@@ -1,0 +1,69 @@
+<div id="certificate-template-preview" style="padding: 10mm; background-color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; box-sizing: border-box; width: 100%;">
+    <form id="certificado_form" method="POST">
+        {% csrf_token %}   
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+         <div style="flex: 1 1 250px; display: flex; align-items: center; gap: 10px;">
+            <div style="width: 55px; height: 55px; background-color: rgb(0, 59, 113); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; flex-shrink: 0;">UAPA</div>
+            <div>
+               <div style="font-weight: bold; color: rgb(0, 59, 113); font-size: 1.1rem; line-height: 1.2;">UAPA</div>
+               <div style="color: rgb(230, 126, 34); font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Educación superior a distancia virtual</div>
+            </div>
+         </div>
+         <div style="flex: 1 1 350px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="background-color: rgb(0, 26, 61); color: white; padding: 7px 15px; border-radius: 6px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; text-align: center; width: 100%; box-sizing: border-box;">Certificado de disponibilidad presupuestal</div>
+            <div style="background-color: rgb(230, 126, 34); color: white; height: 32px; padding: 0px 15px; border-radius: 6px; font-size: 0.9rem; font-weight: bold; width: 100%; display: flex; justify-content: flex-end; align-items: center; box-sizing: border-box; line-height: 1;">CERTIFICADO No. {{ sequence_number }}</div>
+         </div>
+      </div>
+      <div style="overflow-x: auto; margin-top: 20px;">
+         <table style="width: 100%; min-width: 600px; border-collapse: collapse;">
+            <tbody>
+               <tr>
+   <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); font-weight: bold; font-size: 11px; padding: 10px; width: 25%; text-transform: uppercase;">Rubro Presupuestal:</td>
+                  <td style="border-bottom: 1px solid rgb(0, 0, 0); padding: 10px; width: 35%;"><span style="color: rgb(51, 51, 51); font-size: 14px; font-weight: 500;">{{ rubro_presupuestal }}</span></td>
+                  <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); font-weight: bold; font-size: 11px; padding: 10px; width: 20%; text-transform: uppercase;">Fecha Solicitud:</td>
+                  <td style="border-bottom: 1px solid rgb(0, 0, 0); padding: 10px;"><span style="color: rgb(51, 51, 51); font-size: 14px; font-weight: 500;">{{ fecha_solicitud }}</span></td>
+               </tr>
+               <tr>
+                  <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); font-weight: bold; font-size: 11px; padding: 10px; text-transform: uppercase;">Centro de Costo:</td>
+                  <td style="border-bottom: 1px solid rgb(0, 0, 0); padding: 10px;">
+                     <input required value="{{centro_costo|default:""}}" placeholder="Ingrese centro de costo" type="text" style="border: none; background: transparent; font-size: 13px; color: rgb(51, 51, 51); width: 100%; outline: none; padding: 2px 0px;">
+                  </td>
+                  <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); font-weight: bold; font-size: 11px; padding: 10px; text-transform: uppercase;">Fecha Aprobación:</td>
+                  <td style="border-bottom: 1px solid rgb(0, 0, 0); padding: 10px;"><span style="color: rgb(51, 51, 51); font-size: 14px; font-weight: 500;">{{ fecha_aprobacion }}</span></td>
+               </tr>
+               <tr>
+                  <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); font-weight: bold; font-size: 11px; padding: 10px; text-transform: uppercase;">Solicitante:</td>
+                  <td colspan="3" style="border-bottom: 1px solid rgb(0, 0, 0); padding: 10px;"><span style="color: rgb(51, 51, 51); font-size: 14px; font-weight: 500;">{{solicitante}}</span></td>
+               </tr>
+               <tr>
+                  <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); font-weight: bold; font-size: 11px; padding: 10px; text-transform: uppercase;">Monto Aprobado:</td>
+                  <td colspan="3" style="border-bottom: 1px solid rgb(0, 0, 0); padding:10px;"><span style="color: rgb(0, 59, 113); font-size: 14px; font-weight: bold;">{{ monto }}</span></td>
+               </tr>
+               <tr>
+                  <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); font-weight: bold; font-size: 11px; padding: 10px; text-transform: uppercase;">Cuenta a Utilizar:</td>
+                  <td colspan="3" style="border-bottom: 1px solid rgb(0, 0, 0); padding: 10px;">
+                     <input required value="{{cuenta_utilizar|default:""}}" placeholder="Ingrese cuenta a utilizar" type="text" style="border: none; background: transparent; font-size: 13px; color: rgb(51, 51, 51); width: 100%; outline: none; padding: 2px 0px;">
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+      </div>
+      <div style="margin-top: 60px; display: flex; flex-wrap: wrap; gap: 40px;">
+         <div style="flex: 1 1 250px;">
+            <div style="font-weight: bold; font-size: 12px; text-transform: uppercase; margin-bottom: 40px;">Firma Validación:</div>
+            <div style="border-top: 1px solid rgb(0, 0, 0); width: 100%; padding-top: 8px;">
+               <div style="font-size: 14px; font-weight: 600;">Stephanie Belliard</div>
+               <div style="font-size: 12px; color: rgb(85, 85, 85);">Encargada Presupuesto y Control de Gestión</div>
+            </div>
+         </div>
+         <div style="flex: 1 1 250px;">
+            <div style="font-weight: bold; font-size: 12px; text-transform: uppercase; margin-bottom: 40px;">Firma Ordenador del Gasto:</div>
+            <div style="border-top: 1px solid rgb(0, 0, 0); width: 100%; padding-top: 8px;">
+               <div style="font-size: 14px; font-weight: 600;">SB</div>
+               <div style="font-size: 12px; color: rgb(85, 85, 85);">Autoridad Competente</div>
+            </div>
+         </div>
+      </div>
+      <div style="text-align: right; font-size: 12px; color: rgb(170, 170, 170); margin-top: 40px; border-top: 1px solid rgb(238, 238, 238); padding-top: 10px;">Documento generado electrónicamente | Elaborado por: Stephanie B.</div>
+   </form> 
+</div>
