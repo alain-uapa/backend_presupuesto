@@ -124,3 +124,42 @@ class GoogleConfig(models.Model):
 
     def __str__(self):
         return self.nombre
+
+class SecuenciaCertificado(models.Model):
+    anno = models.IntegerField(unique=True)
+    numero = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'SecuenciaCertificado'
+        verbose_name = 'Secuencia de Certificado'
+        verbose_name_plural = 'Secuencias de Certificados'
+
+    @classmethod
+    def get_next_number(cls):
+        from django.utils import timezone
+        current_year = timezone.now().year
+        
+        secuencia, created = cls.objects.get_or_create(
+            anno=current_year,
+            defaults={'numero': 0}
+        )
+        
+        return secuencia.numero + 1
+
+    @classmethod
+    def increment_sequence(cls):
+        from django.utils import timezone
+        current_year = timezone.now().year
+        
+        secuencia, created = cls.objects.get_or_create(
+            anno=current_year,
+            defaults={'numero': 0}
+        )
+        
+        secuencia.numero += 1
+        secuencia.save()
+        
+        return secuencia.numero
+
+    def __str__(self):
+        return f"Sequencia {self.anno}: {self.numero}"

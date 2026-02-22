@@ -7,18 +7,20 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from weasyprint import HTML
 from core.utils.logging import log_error
-from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud
+from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud, SecuenciaCertificado
 from .google_drive import upload_to_drive
 from datetime import datetime
 
 def get_certificado_template(request, pk):
     solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)              
     fecha_aprobacion = datetime.now().strftime('%d/%m/%Y')
+    sequence_number = SecuenciaCertificado.get_next_number()
+    sequence_formatted = f"{sequence_number:04d}"
     #submit_url = request.build_absolute_uri(reverse('certificado_create', args=[pk]))
     return render(request, 'presupuesto/certificado_template.html', {
         'centro_costo': "",
         'cuenta_utilizar': "",
-        'sequence_number': '0001',
+        'sequence_number': sequence_formatted,
         'monto': solicitud.monto_a_ejecutar,
         'solicitante': solicitud.colaborador.get_full_name(),
         'rubro_presupuestal': solicitud.rubro_presupuestal,
@@ -38,7 +40,7 @@ def generar_certificado_pdf(request, pk):
         context = {
             'centro_costo': data.get('centro_costo'),
             'cuenta_utilizar': data.get('cuenta_utilizar'),
-            'sequence_number': '0001',
+            'sequence_number': data.get('sequence_number'),
             'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,
             'solicitante': solicitud.colaborador.get_full_name(),
@@ -63,6 +65,8 @@ def generar_certificado_pdf(request, pk):
             mime_type='application/pdf',
             es_certificado=True
         )
+        
+        SecuenciaCertificado.increment_sequence()
         
         return JsonResponse({
             'drive_id': resultado_drive['id'],
