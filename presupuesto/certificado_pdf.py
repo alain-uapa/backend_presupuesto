@@ -28,21 +28,24 @@ def get_certificado_template(request, pk):
     })
 @csrf_exempt
 def generar_certificado_pdf(request, pk):
+        
     if request.method != 'POST':
         return JsonResponse({"error": "Método no permitido"}, status=405)
     
     try:
         solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
         data = request.POST 
-        
-        pdf_file = generate_pdf('presupuesto/certificado_template.html', {
+        context = {
             'centro_costo': data.get('centro_costo'),
             'cuenta_utilizar': data.get('cuenta_utilizar'),
             'sequence_number': '0001',
+            'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,
             'solicitante': solicitud.colaborador.get_full_name(),
+            'fecha_solicitud' : solicitud.fecha_solicitud.strftime('%d/%m/%Y'),
             'fecha_aprobacion': datetime.now().strftime('%d/%m/%Y')
-        }, f"certificacion_{pk}")   
+        }
+        pdf_file = generate_pdf('presupuesto/certificado_template.html', context, f"certificacion_{pk}")   
         
         archivo_drive = ContentFile(pdf_file, name=f"certificacion_{pk}.pdf")
         
