@@ -66,6 +66,13 @@ def generar_certificado_pdf(request, pk):
             es_certificado=True
         )
         
+        adjuntos_ids = request.POST.getlist('adjuntos_ids')
+        if adjuntos_ids:
+            AdjuntoSolicitud.objects.filter(
+                id__in=adjuntos_ids, 
+                solicitud=solicitud
+            ).update(aprobado=True)
+        
         SecuenciaCertificado.increment_sequence()
         
         return JsonResponse({

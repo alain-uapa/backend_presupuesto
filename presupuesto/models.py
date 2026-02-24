@@ -84,6 +84,7 @@ class AdjuntoSolicitud(models.Model):
     url_view = models.TextField(verbose_name="Enlace de visualización")
     mime_type = models.CharField(max_length=100, verbose_name="Tipo de archivo")
     es_certificado = models.BooleanField(default=False, verbose_name="Es certificado")
+    aprobado = models.BooleanField(default=False, verbose_name="Aprobado en certificado")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"{self.nombre} - Solicitud {self.solicitud_id}"
