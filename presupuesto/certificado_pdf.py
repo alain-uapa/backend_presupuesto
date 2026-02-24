@@ -10,6 +10,7 @@ from core.utils.logging import log_error
 from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud, SecuenciaCertificado
 from .google_drive import upload_to_drive
 from datetime import datetime
+import json
 
 def get_certificado_template(request, pk):
     solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)              
@@ -26,6 +27,7 @@ def get_certificado_template(request, pk):
         'rubro_presupuestal': solicitud.rubro_presupuestal,
         'fecha_solicitud': solicitud.fecha_solicitud.strftime('%d/%m/%Y') if solicitud.fecha_solicitud else '',
         'fecha_aprobacion': fecha_aprobacion,
+        'aprobado_por': request.user.get_full_name()
         #'submit_url': submit_url,
     })
 @csrf_exempt
@@ -39,13 +41,15 @@ def generar_certificado_pdf(request, pk):
         data = request.POST 
         context = {
             'centro_costo': data.get('centro_costo'),
-            'cuenta_utilizar': data.get('cuenta_analitica'),
+            'cuenta_analitica': solicitud.cuenta_analitica,
+            'cuenta_utilizar': '',
             'sequence_number': data.get('sequence_number'),
             'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,
             'solicitante': solicitud.colaborador.get_full_name(),
             'fecha_solicitud' : solicitud.fecha_solicitud.strftime('%d/%m/%Y'),
-            'fecha_aprobacion': datetime.now().strftime('%d/%m/%Y')
+            'fecha_aprobacion': datetime.now().strftime('%d/%m/%Y'),
+            'aprobado_por': request.user.get_full_name()
         }
         pdf_file = generate_pdf('presupuesto/certificado_template.html', context, f"certificacion_{pk}")   
         
@@ -66,10 +70,11 @@ def generar_certificado_pdf(request, pk):
             es_certificado=True
         )
         
-        adjuntos_ids = request.POST.getlist('adjuntos_ids')
+        adjuntos_ids = request.POST.getlist('attachment_ids')
         if adjuntos_ids:
+            ids = json.loads(adjuntos_ids[0]) if isinstance(adjuntos_ids[0], str) else adjuntos_ids
             AdjuntoSolicitud.objects.filter(
-                id__in=adjuntos_ids, 
+                id__in=ids, 
                 solicitud=solicitud
             ).update(aprobado=True)
         
