@@ -17,10 +17,10 @@ def get_certificado_template(request, pk):
     fecha_aprobacion = datetime.now().strftime('%d/%m/%Y')
     sequence_number = SecuenciaCertificado.get_next_number()
     sequence_formatted = f"{sequence_number:04d}"
-    #submit_url = request.build_absolute_uri(reverse('certificado_create', args=[pk]))
+    cuenta_contable = request.GET.get('cuenta_contable', "")
     return render(request, 'presupuesto/certificado_template.html', {
         'cuenta_analitica': solicitud.cuenta_analitica,
-        'cuenta_utilizar': "",
+        'cuenta_contable': cuenta_contable,
         'sequence_number': sequence_formatted,
         'monto': solicitud.monto_a_ejecutar,
         'solicitante': solicitud.colaborador.get_full_name(),
@@ -42,7 +42,7 @@ def generar_certificado_pdf(request, pk):
         context = {
             'centro_costo': data.get('centro_costo'),
             'cuenta_analitica': solicitud.cuenta_analitica,
-            'cuenta_utilizar': data.get('cuenta_utilizar'),
+            'cuenta_contable': data.get('cuenta_contable'),
             'sequence_number': data.get('sequence_number'),
             'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,

@@ -81,7 +81,8 @@
               <tr>
                  <td style="border: 1px solid rgb(255, 193, 7); background-color: rgb(249, 249, 249); font-weight: bold; font-size: 11px; padding: 12px 10px; text-transform: uppercase;">Cuenta a Utilizar:</td>
                  <td colspan="3" style="border-bottom: 1px solid black; padding: 10px;">
-                    <input name="cuenta_utilizar" required value="{{cuenta_utilizar|default:''}}" placeholder="Escriba la cuenta..." type="text" style="border: none; background: transparent; font-size: 13px; color: #333; width: 100%; outline: none;">
+                  <input type="hidden" name="cuenta_contable" value="{{cuenta_contable}}">
+                  <span style="color: rgb(0, 59, 113); font-size: 15px; font-weight: bold;">{{ cuenta_contable }}</span>
                  </td>
               </tr>
            </tbody>
