@@ -42,7 +42,7 @@ def generar_certificado_pdf(request, pk):
         context = {
             'centro_costo': data.get('centro_costo'),
             'cuenta_analitica': solicitud.cuenta_analitica,
-            'cuenta_utilizar': '',
+            'cuenta_utilizar': data.get('cuenta_utilizar'),
             'sequence_number': data.get('sequence_number'),
             'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,
