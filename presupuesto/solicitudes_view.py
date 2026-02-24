@@ -75,7 +75,7 @@ def solicitudes_list(request):
        'colaborador', 'ubicacion', 'cuenta_analitica'
     ).prefetch_related('adjuntos')
     
-    if request.user.is_superuser or request.user.groups.filter(name='Supervisor').exists():
+    if request.user.is_superuser or request.user.groups.filter(name__in=['Supervisor', 'Lector']).exists():
         qs_pendientes = base_qs.filter(estado='PENDIENTE').order_by('-fecha_solicitud')
         qs_otras = base_qs.exclude(estado='PENDIENTE').order_by('-fecha_solicitud')
     else:

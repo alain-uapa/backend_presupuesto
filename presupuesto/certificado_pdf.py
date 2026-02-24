@@ -18,7 +18,7 @@ def get_certificado_template(request, pk):
     sequence_formatted = f"{sequence_number:04d}"
     #submit_url = request.build_absolute_uri(reverse('certificado_create', args=[pk]))
     return render(request, 'presupuesto/certificado_template.html', {
-        'centro_costo': "",
+        'cuenta_analitica': solicitud.cuenta_analitica,
         'cuenta_utilizar': "",
         'sequence_number': sequence_formatted,
         'monto': solicitud.monto_a_ejecutar,
@@ -39,7 +39,7 @@ def generar_certificado_pdf(request, pk):
         data = request.POST 
         context = {
             'centro_costo': data.get('centro_costo'),
-            'cuenta_utilizar': data.get('cuenta_utilizar'),
+            'cuenta_utilizar': data.get('cuenta_analitica'),
             'sequence_number': data.get('sequence_number'),
             'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,
