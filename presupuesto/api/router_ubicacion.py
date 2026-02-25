@@ -4,16 +4,16 @@ from django.shortcuts import get_object_or_404
 from typing import List
 from django.contrib.auth.models import User
 from decimal import Decimal
-from ..models import SolicitudPresupuesto, CuentaAnalitica, Ubicacion
+from ..models import SolicitudPresupuesto, CuentaAnalitica, Sede
 
 router = Router()
 
-class UbicacionOut(Schema):
+class SedeOut(Schema):
     id: int
+    codigo: str
     nombre: str
 
-@router.get("/list", response=List[UbicacionOut])
-def listar_ubicaciones(request):
-    return Ubicacion.objects.all().order_by('nombre')
-
+@router.get("/list", response=List[SedeOut])
+def listar_sedes(request):
+    return Sede.objects.all().order_by('nombre')
 

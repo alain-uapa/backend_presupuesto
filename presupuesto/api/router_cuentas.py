@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from typing import List
 from django.contrib.auth.models import User
 from decimal import Decimal
-from ..models import SolicitudPresupuesto, CuentaAnalitica, Ubicacion
+from ..models import SolicitudPresupuesto, CuentaAnalitica, Sede
 
 router = Router()
 

@@ -6,6 +6,8 @@ from django.contrib.auth.models import User,  Group
 from django.views.decorators.csrf import csrf_exempt
 from google.oauth2 import id_token
 from google.auth.transport import requests
+
+from presupuesto.models import Configuracion
 # Reemplaza con tu Client ID de Google Console
 GOOGLE_CLIENT_ID = "478848519153-0tklbkp5d7252099relj297632eka3qg.apps.googleusercontent.com"
 
@@ -34,12 +36,22 @@ def google_login(request):
                     'last_name': last_name
                 }
             )
-            if created:
-                grupo, _ = Group.objects.get_or_create(name='Colaborador')
-                user.groups.add(grupo)
             # 4. Iniciar sesión (Crea la cookie de sesión de Django)
             login(request, user)
-
+            # Verificar si el email del usuario está en alguna configuración de auditores
+            es_auditor = Configuracion.objects.filter(
+                nombre__startswith='AUDITORES',
+                valor__contains=email
+            ).exists()
+            
+            # Siempre resetear el grupo del usuario (los roles pueden cambiar entre sesiones)
+            grupo = Group.objects.get_or_create(name='Auditor' if es_auditor else 'Colaborador')[0]
+            user.groups.clear()
+            user.groups.add(grupo)
+            
+            # Determinar el rol del usuario
+            rol_usuario = 'Auditor' if es_auditor else 'Colaborador'
+            
             return JsonResponse({
                 "mensaje": "Sesión iniciada correctamente",
                 "user": {
@@ -47,7 +59,7 @@ def google_login(request):
                         "email": user.email, 
                         "first_name": user.first_name,
                         "last_name": user.last_name,
-                        "role": user.groups.first().name if user.groups.exists() else "Colaborador"
+                        "role": rol_usuario
                         }
             })
 

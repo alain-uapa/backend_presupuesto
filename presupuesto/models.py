@@ -12,11 +12,12 @@ def asignar_grupo_colaborador(sender, instance, created, **kwargs):
         grupo, _ = Group.objects.get_or_create(name='Colaborador')
         instance.groups.add(grupo)
         
-class Ubicacion(models.Model):
+class Sede(models.Model):
+    codigo = models.CharField(max_length=3, unique=True)
     nombre = models.CharField(max_length=100)
     
     def __str__(self):
-        return self.nombre
+        return f"{self.codigo} - {self.nombre}"
 
 class CuentaAnalitica(models.Model):
     codigo = models.CharField(max_length=20)
@@ -52,7 +53,7 @@ class SolicitudPresupuesto(models.Model):
     tipo_solicitud = models.CharField(max_length=20, choices=TIPO_CHOICES)
     rubro_presupuestal = models.CharField(max_length=20, choices=RUBRO_CHOICES)
     
-    ubicacion = models.ForeignKey(Ubicacion, on_delete=models.PROTECT)
+    ubicacion = models.ForeignKey(Sede, on_delete=models.PROTECT)
     cuenta_analitica = models.ForeignKey(CuentaAnalitica, on_delete=models.PROTECT)
     
     presupuesto_pre_aprobado = models.DecimalField(max_digits=12, decimal_places=2)
@@ -113,6 +114,28 @@ class Configuracion(models.Model):
         if config:
             return config.valor
         return default
+
+    @classmethod
+    def get_auditores_by_sede(cls, sede_codigo):
+        """
+        Busca una configuración de usuarios de contabilidad por código de sede.
+        
+        Args:
+            sede_codigo: Código de la sede (ej: 'SED001', '01', etc.)
+            
+        Returns:
+            El valor de la configuración si se encuentra, None en caso contrario.
+        """
+        # Buscar configuraciones que contengan 'USUARIOS_CONTABILIDAD_'
+        # y que terminen con el código de sede
+        config = cls.objects.filter(
+            nombre__contains='AUDITORES_',
+            nombre__endswith=sede_codigo
+        ).first()
+        
+        if config:
+            return config.valor
+        return None
 
     def __str__(self):
         return self.nombre

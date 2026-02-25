@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SolicitudPresupuesto, Ubicacion, CuentaAnalitica, GoogleConfig, Configuracion, AdjuntoSolicitud
+from .models import SolicitudPresupuesto, Sede, CuentaAnalitica, GoogleConfig, Configuracion, AdjuntoSolicitud
 
 @admin.register(SolicitudPresupuesto)
 class SolicitudAdmin(admin.ModelAdmin):
@@ -15,8 +15,12 @@ class SolicitudAdmin(admin.ModelAdmin):
         # Si no, solo ve lo suyo
         return qs.filter(colaborador=request.user)
 
-admin.site.register(Ubicacion)
+admin.site.register(Sede)
 admin.site.register(CuentaAnalitica)
 admin.site.register(GoogleConfig)
-admin.site.register(Configuracion)
+@admin.register(Configuracion)
+class ConfiguracionAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'valor', 'descripcion')
+
+
 admin.site.register(AdjuntoSolicitud)

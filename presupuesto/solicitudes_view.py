@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 
 from presupuesto import utils
-from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Ubicacion
+from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
 from .google_drive import upload_to_drive, delete_from_drive
@@ -74,10 +74,24 @@ def solicitudes_list(request):
     base_qs = SolicitudPresupuesto.objects.select_related(
        'colaborador', 'ubicacion', 'cuenta_analitica'
     ).prefetch_related('adjuntos')
-    
-    if request.user.is_superuser or request.user.groups.filter(name__in=['Supervisor', 'Lector']).exists():
+  
+    # Buscar configuración de usuarios de contabilidad por email del usuario
+    usuario_contabilidad = Configuracion.objects.filter(
+        nombre__startswith='AUDITORES',
+        valor__contains=request.user.email
+    ).values_list('nombre', flat=True).first()
+  
+    # Extraer el código de sede (lo que está después del último '_')
+    # Ejemplo: 'AUDITORES_RSD' -> 'RSD'
+    sede_codigo = None
+    if usuario_contabilidad:
+        sede_codigo = usuario_contabilidad.split('_')[-1]
+    if request.user.is_superuser or request.user.groups.filter(name__in=['Supervisor']).exists():
         qs_pendientes = base_qs.filter(estado='PENDIENTE').order_by('-fecha_solicitud')
         qs_otras = base_qs.exclude(estado='PENDIENTE').order_by('-fecha_solicitud')
+    elif sede_codigo: #Es auditor por SEDE
+        qs_pendientes = base_qs.filter(estado='PENDIENTE', ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')    
     else:
         qs_pendientes = base_qs.filter(estado='PENDIENTE', colaborador=request.user).order_by('-fecha_solicitud')
         qs_otras = base_qs.exclude(estado='PENDIENTE').filter(colaborador=request.user).order_by('-fecha_solicitud')
