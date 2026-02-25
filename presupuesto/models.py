@@ -116,7 +116,7 @@ class Configuracion(models.Model):
         return default
 
     @classmethod
-    def get_auditores_by_sede(cls, sede_codigo):
+    def get_usuarios_compra_por_sede(cls, sede_codigo):
         """
         Busca una configuración de usuarios de contabilidad por código de sede.
         

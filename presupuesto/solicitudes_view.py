@@ -15,6 +15,7 @@ from core.utils.login_required import login_required_json
 from .google_drive import upload_to_drive, delete_from_drive
 from emails.mailer import send_email
 from core.utils.logging import log_error
+from .utils import enviar_email_solicitud_creada, enviar_email_a_compras, FrontendRequest
 
 #Presupuesto files
 def es_supervisor(user):
@@ -136,15 +137,9 @@ def crear_solicitud(request):
                 'solicitante': nueva_solicitud.colaborador.get_full_name(),
                 'sede': str(nueva_solicitud.ubicacion),
                 'monto_a_ejecutar': nueva_solicitud.monto_a_ejecutar,
-                'url_sistema': utils.generar_url_frontend(f"/request/{nueva_solicitud.id}")
+                'url_sistema': FrontendRequest.VIEW.url(request, nueva_solicitud.id)
             }
-            send_email(
-                subject='Nueva Solicitud de Presupuesto',
-                send_to_list=[Configuracion.get_value('GESTOR')],
-                template='presupuesto/nueva_solicitud.html',
-                context=context
-            )
-
+            enviar_email_solicitud_creada(context)        
             serializer = BaseSerializer([nueva_solicitud])
             return JsonResponse({"mensaje": "Creada con éxito", "datos": serializer.serialize()[0]}, status=201)
     except Exception as e:
@@ -186,7 +181,7 @@ def cambiar_estado(request, pk):
                 return JsonResponse({"error": "El campo 'status' es obligatorio"}, status=400)
 
             # 3. Lógica de negocio para el estado                                                                                                                                                                                   
-            solicitud.estado = nuevo_estado # Asumiendo que el campo en tu modelo se llama 'estado'
+            solicitud.estado = nuevo_estado
             
             # Si es rechazada, guardamos el comentario en el campo específico
             if nuevo_estado.upper() == 'RECHAZADA':
@@ -196,7 +191,16 @@ def cambiar_estado(request, pk):
             solicitud.save()
 
             # 5. Respuesta
-            serializer = BaseSerializer([solicitud])      
+            serializer = BaseSerializer([solicitud])                  
+            context={
+                'id': solicitud.id,
+                'solicitante': solicitud.colaborador.get_full_name(),
+                'email_solicitante': solicitud.colaborador.email, #Solo para el envío de email
+                'titulo': solicitud.titulo,
+                'monto_a_ejecutar': solicitud.monto_a_ejecutar,
+                'estado': nuevo_estado.upper(),
+                'url_sistema': FrontendRequest.VIEW.url(request, solicitud.id)
+            }
             email_template = 'presupuesto/cambio_estado.html'
             context={
                 'id': solicitud.id,
@@ -204,19 +208,16 @@ def cambiar_estado(request, pk):
                 'titulo': solicitud.titulo,
                 'monto_a_ejecutar': solicitud.monto_a_ejecutar,
                 'estado': nuevo_estado.upper(),
-                'url_sistema': utils.generar_url_frontend(f"/request/{solicitud.id}")
+                'url_sistema': FrontendRequest.VIEW.url(request, solicitud.id)
             }
             #TODO: bcc_list
             send_to_list = [solicitud.colaborador.email]
-            gestor = Configuracion.get_value('GESTOR')
-            if request.user.email != gestor:
-                send_to_list.append(gestor)
             send_email(
                 subject='Solicitud de Presupuesto', 
                 send_to_list=send_to_list, 
                 template=email_template, 
                 context=context,                
-            )           
+            )  
             return JsonResponse({
                 "mensaje": f"Estado actualizado a {nuevo_estado} con éxito",
                 "datos": serializer.serialize()[0]

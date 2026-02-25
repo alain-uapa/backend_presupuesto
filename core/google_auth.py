@@ -38,19 +38,30 @@ def google_login(request):
             )
             # 4. Iniciar sesión (Crea la cookie de sesión de Django)
             login(request, user)
+            # Verificar si el usuario ya pertenece al grupo Supervisor
+            es_supervisor = user.groups.filter(name='Supervisor').exists()
+            
             # Verificar si el email del usuario está en alguna configuración de auditores
             es_auditor = Configuracion.objects.filter(
                 nombre__startswith='AUDITORES',
                 valor__contains=email
             ).exists()
             
-            # Siempre resetear el grupo del usuario (los roles pueden cambiar entre sesiones)
-            grupo = Group.objects.get_or_create(name='Auditor' if es_auditor else 'Colaborador')[0]
-            user.groups.clear()
-            user.groups.add(grupo)
-            
-            # Determinar el rol del usuario
-            rol_usuario = 'Auditor' if es_auditor else 'Colaborador'
+            # Determinar el grupo del usuario: si ya es Supervisor, dejarlo así
+            # sino verificar si es Auditor por Configuración, sino es Colaborador
+            if es_supervisor:
+                # Ya es Supervisor, no modificar su grupo
+                rol_usuario = 'Supervisor'
+            elif es_auditor:
+                grupo = Group.objects.get_or_create(name='Auditor')[0]
+                user.groups.clear()
+                user.groups.add(grupo)
+                rol_usuario = 'Auditor'
+            else:
+                grupo = Group.objects.get_or_create(name='Colaborador')[0]
+                user.groups.clear()
+                user.groups.add(grupo)
+                rol_usuario = 'Colaborador'
             
             return JsonResponse({
                 "mensaje": "Sesión iniciada correctamente",

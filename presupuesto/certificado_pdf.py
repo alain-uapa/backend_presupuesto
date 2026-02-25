@@ -11,6 +11,7 @@ from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud, Secue
 from .google_drive import upload_to_drive
 from datetime import datetime
 import json
+from .utils import enviar_email_a_compras
 
 def get_certificado_template(request, pk):
     solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)              
@@ -79,7 +80,8 @@ def generar_certificado_pdf(request, pk):
             ).update(aprobado=True)
         
         SecuenciaCertificado.increment_sequence()
-        
+
+        enviar_email_a_compras(request, solicitud)
         return JsonResponse({
             'drive_id': resultado_drive['id'],
             'url_view': resultado_drive['webViewLink']
