@@ -120,7 +120,7 @@ def solicitudes_list(request):
         ]
     return JsonResponse(data_serializada, safe=False)
 
-@csrf_exempt
+#@csrf_exempt
 @login_required_json
 def crear_solicitud(request):
     if request.method != 'POST':
@@ -146,7 +146,7 @@ def crear_solicitud(request):
         log_error(request, e, {'funcion': 'crear_solicitud'})
         return JsonResponse({"error": str(e)}, status=400)
 
-@csrf_exempt
+#@csrf_exempt
 @login_required_json
 def editar_solicitud(request, pk):
     solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
@@ -161,7 +161,7 @@ def editar_solicitud(request, pk):
         log_error(request, e, {'funcion': 'editar_solicitud', 'pk': pk})
         return JsonResponse({"error": str(e)}, status=400)
 
-@csrf_exempt
+#@csrf_exempt
 @login_required_json                                                                                                                                                                                                                                                                                
 def cambiar_estado(request, pk):
     if request.method == 'PATCH':
@@ -218,7 +218,7 @@ def cambiar_estado(request, pk):
 
     return JsonResponse({"error": "Método no permitido. Use PATCH"}, status=405)   
 
-@csrf_exempt
+#@csrf_exempt
 @login_required_json
 def eliminar_solicitud(request, pk):
     if request.method == 'DELETE':
@@ -252,7 +252,7 @@ def eliminar_solicitud(request, pk):
 
     return JsonResponse({"error": "Método no permitido. Use DELETE"}, status=405)
 
-@csrf_exempt
+#@csrf_exempt
 def eliminar_adjunto(request, pk):
     if request.method == 'DELETE':
         # Buscamos el registro del adjunto
@@ -281,7 +281,7 @@ def eliminar_adjunto(request, pk):
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
-@csrf_exempt
+#@csrf_exempt
 @login_required_json
 def confirmar_solicitud(request, pk):
     """
