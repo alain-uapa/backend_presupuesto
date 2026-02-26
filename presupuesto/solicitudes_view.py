@@ -280,3 +280,33 @@ def eliminar_adjunto(request, pk):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
+@csrf_exempt
+@login_required_json
+def confirmar_solicitud(request, pk):
+    """
+    Vista para confirmar una solicitud de presupuesto.
+    Recibe el id de la solicitud y pone el campo confirmado en True.
+    """
+    if request.method == 'PATCH':
+        try:
+            # 1. Buscar la solicitud
+            try:
+                solicitud = SolicitudPresupuesto.objects.get(pk=pk)
+            except SolicitudPresupuesto.DoesNotExist:
+                return JsonResponse({"error": "Solicitud no encontrada"}, status=400)
+
+            # 2. Actualizar el campo confirmado
+            solicitud.confirmado = True
+            solicitud.save()
+
+            return JsonResponse({
+                "mensaje": "Solicitud confirmada exitosamente",
+                "confirmado": True
+            }, status=200)
+
+        except Exception as e:
+            log_error(request, e, {'funcion': 'confirmar_solicitud', 'pk': pk})
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Método no permitido. Use PATCH"}, status=405)

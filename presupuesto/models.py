@@ -60,6 +60,7 @@ class SolicitudPresupuesto(models.Model):
     monto_a_ejecutar = models.DecimalField(max_digits=12, decimal_places=2)
     
     estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='PENDIENTE')
+    confirmado = models.BooleanField(default=False, verbose_name="Confirmado")
     # Nombre más apropiado para el motivo de rechazo
     observaciones_supervisor = models.TextField(blank=True, null=True, verbose_name="Observaciones de Revisión")
   
