@@ -18,9 +18,11 @@ def get_certificado_template(request, pk):
     fecha_aprobacion = datetime.now().strftime('%d/%m/%Y')
     sequence_number = SecuenciaCertificado.get_next_number()
     sequence_formatted = f"{sequence_number:04d}"
-    cuenta_contable = request.GET.get('cuenta_contable', "")
+    cuenta_contable_id = request.GET.get('cuenta_contable', "")
+    cuenta_contable = get_object_or_404(CuentaContable, pk=cuenta_contable_id)
     return render(request, 'presupuesto/certificado_template.html', {
         'cuenta_analitica': solicitud.cuenta_analitica,
+        'cuenta_contable_id': cuenta_contable_id,
         'cuenta_contable': cuenta_contable,
         'sequence_number': sequence_formatted,
         'monto': solicitud.monto_a_ejecutar,
@@ -41,15 +43,16 @@ def generar_certificado_pdf(request, pk):
         solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
         data = request.POST 
         
-        cuenta_contable_id = data.get('cuenta_contable')
+        cuenta_contable_id = data.get('cuenta_contable_id')
         if cuenta_contable_id:
-            solicitud.cuenta_contable = cuenta_contable_id
-            solicitud.save(update_fields=['cuenta_contable_id'])
+            cuenta_contable = get_object_or_404(CuentaContable, pk=cuenta_contable_id)
+            solicitud.cuenta_contable = cuenta_contable
+            solicitud.save(update_fields=['cuenta_contable'])
         
         context = {
             'centro_costo': data.get('centro_costo'),
             'cuenta_analitica': solicitud.cuenta_analitica,
-            'cuenta_contable': cuenta_contable_id,
+            'cuenta_contable': cuenta_contable.nombre if cuenta_contable is not None else "",
             'sequence_number': data.get('sequence_number'),
             'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,
