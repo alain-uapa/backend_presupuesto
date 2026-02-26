@@ -38,14 +38,15 @@ def enviar_email_solicitud_creada(context):
 
 def enviar_email_a_compras(request, solicitud):    
     email_template = 'presupuesto/emision_certificado_a_compra.html'
-    sede = get_object_or_404(Sede, id=solicitud.sede)
+    sede = get_object_or_404(Sede, id=solicitud.ubicacion.id)
     usuarios_value = Configuracion.get_usuarios_compra_por_sede(sede.codigo)
     if usuarios_value:
         send_to_list = [email.strip() for email in usuarios_value.replace(';', ',').split(',') if email.strip()]
     else:
         send_to_list = []   
     context={
-        'concepto': solicitud.titulo,
+        'solicitante': solicitud.colaborador.get_full_name(),
+        'titulo': solicitud.titulo,
         'monto_a_ejecutar': solicitud.monto_a_ejecutar,
         'sede': sede.nombre,
         'url_solicitud': FrontendRequest.CONFIRM.url(request, solicitud.id)

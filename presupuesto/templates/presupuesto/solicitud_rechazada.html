@@ -11,7 +11,11 @@
             <div style="padding: 30px;">
                 <p style="font-size: 16px;">Hola,</p>
                 <p>Su solicitud ha sido rechazada. Para conocer el motivo siga el siguiente enlace</p>
-                
+                <div style="background-color: #fffbeb; padding: 20px; border-left: 4px solid #fef3c7; border-radius: 4px; margin: 25px 0;">
+                    <p style="margin: 0 0 8px 0;"><strong>Concepto:</strong> {{ titulo }}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Monto:</strong>RD$ {{ monto_a_ejecutar }}</p>
+                    <p style="margin: 0;"><strong>Sede:</strong> {{ sede }}</p>
+                </div>
                 <div style="text-align: center; margin-bottom: 20px;">
                     <a href="{{ url_solicitud }}" 
                     style="display: inline-block; padding: 14px 28px; background-color: #ffe4e6; color: #be2f6e; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">

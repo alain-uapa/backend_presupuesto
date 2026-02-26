@@ -41,22 +41,21 @@ def google_login(request):
             # Verificar si el usuario ya pertenece al grupo Supervisor
             es_supervisor = user.groups.filter(name='Supervisor').exists()
             
-            # Verificar si el email del usuario está en alguna configuración de auditores
-            es_auditor = Configuracion.objects.filter(
-                nombre__startswith='AUDITORES',
+            es_usuario_compra = Configuracion.objects.filter(
+                nombre__startswith='USUARIOS_COMPRA',
                 valor__contains=email
             ).exists()
             
             # Determinar el grupo del usuario: si ya es Supervisor, dejarlo así
-            # sino verificar si es Auditor por Configuración, sino es Colaborador
+            # sino verificar si es Compra por Configuración, sino es Colaborador
             if es_supervisor:
                 # Ya es Supervisor, no modificar su grupo
                 rol_usuario = 'Supervisor'
-            elif es_auditor:
-                grupo = Group.objects.get_or_create(name='Auditor')[0]
+            elif es_usuario_compra:
+                grupo = Group.objects.get_or_create(name='Compra')[0]
                 user.groups.clear()
                 user.groups.add(grupo)
-                rol_usuario = 'Auditor'
+                rol_usuario = 'Compra'
             else:
                 grupo = Group.objects.get_or_create(name='Colaborador')[0]
                 user.groups.clear()

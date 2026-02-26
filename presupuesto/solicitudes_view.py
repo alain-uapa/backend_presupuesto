@@ -77,20 +77,20 @@ def solicitudes_list(request):
     ).prefetch_related('adjuntos')
   
     # Buscar configuración de usuarios de contabilidad por email del usuario
-    usuario_contabilidad = Configuracion.objects.filter(
-        nombre__startswith='AUDITORES',
+    usuario_compra = Configuracion.objects.filter(
+        nombre__startswith='USUARIOS_COMPRA',
         valor__contains=request.user.email
     ).values_list('nombre', flat=True).first()
   
     # Extraer el código de sede (lo que está después del último '_')
-    # Ejemplo: 'AUDITORES_RSD' -> 'RSD'
+    # Ejemplo: 'USUARIOS_COMPRA_RSD' -> 'RSD'
     sede_codigo = None
-    if usuario_contabilidad:
-        sede_codigo = usuario_contabilidad.split('_')[-1]
+    if usuario_compra:
+        sede_codigo = usuario_compra.split('_')[-1]
     if request.user.is_superuser or request.user.groups.filter(name__in=['Supervisor']).exists():
         qs_pendientes = base_qs.filter(estado='PENDIENTE').order_by('-fecha_solicitud')
         qs_otras = base_qs.exclude(estado='PENDIENTE').order_by('-fecha_solicitud')
-    elif sede_codigo: #Es auditor por SEDE
+    elif sede_codigo: #Es usuario compra por SEDE
         qs_pendientes = base_qs.filter(estado='PENDIENTE', ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')
         qs_otras = base_qs.exclude(estado='PENDIENTE').filter(ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')    
     else:
@@ -135,7 +135,7 @@ def crear_solicitud(request):
                 'id': nueva_solicitud.id,
                 'titulo': nueva_solicitud.titulo,
                 'solicitante': nueva_solicitud.colaborador.get_full_name(),
-                'sede': str(nueva_solicitud.ubicacion),
+                'sede': nueva_solicitud.ubicacion.nombre,
                 'monto_a_ejecutar': nueva_solicitud.monto_a_ejecutar,
                 'url_solicitud': FrontendRequest.VIEW.url(request, nueva_solicitud.id)
             }
@@ -192,7 +192,10 @@ def cambiar_estado(request, pk):
 
             serializer = BaseSerializer([solicitud])  
             if nuevo_estado.upper() == 'RECHAZADA':          
-                context={
+                context = {
+                    'titulo': solicitud.titulo,
+                    'sede': solicitud.ubicacion.nombre,
+                    'monto_a_ejecutar': solicitud.monto_a_ejecutar,
                     'url_solicitud': FrontendRequest.VIEW.url(request, solicitud.id)
                 }
                 email_template = 'presupuesto/solicitud_rechazada.html'
