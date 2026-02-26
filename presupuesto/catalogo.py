@@ -22,7 +22,7 @@ def cuentas_analiticas_list(request):
     qs = CuentaAnalitica.objects.all().order_by('nombre')
     
     # El serializer procesará 'id', 'codigo' y 'nombre'
-    serializer = BaseSerializer(qs, exclude=['codigo'])
+    serializer = BaseSerializer(qs)
     return JsonResponse(serializer.serialize(), safe=False)
 
 @login_required_json
