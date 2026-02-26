@@ -26,6 +26,16 @@ class CuentaAnalitica(models.Model):
     def __str__(self):
         return self.nombre
 
+class CuentaContable(models.Model):
+    codigo = models.CharField(max_length=20, unique=True)
+    nombre = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.nombre}"
+    
+    class Meta:
+        ordering = ['codigo']
+
 class SolicitudPresupuesto(models.Model):
     ESTADO_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
@@ -55,6 +65,7 @@ class SolicitudPresupuesto(models.Model):
     
     ubicacion = models.ForeignKey(Sede, on_delete=models.PROTECT)
     cuenta_analitica = models.ForeignKey(CuentaAnalitica, on_delete=models.PROTECT)
+    cuenta_contable = models.ForeignKey(CuentaContable, on_delete=models.PROTECT, null=True, blank=True)
     
     presupuesto_pre_aprobado = models.DecimalField(max_digits=12, decimal_places=2)
     monto_a_ejecutar = models.DecimalField(max_digits=12, decimal_places=2)

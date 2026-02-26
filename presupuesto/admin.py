@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SolicitudPresupuesto, Sede, CuentaAnalitica, GoogleConfig, Configuracion, AdjuntoSolicitud
+from .models import SolicitudPresupuesto, Sede, CuentaAnalitica, GoogleConfig, Configuracion, AdjuntoSolicitud, CuentaContable
 
 @admin.register(SolicitudPresupuesto)
 class SolicitudAdmin(admin.ModelAdmin):
@@ -24,3 +24,4 @@ class ConfiguracionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(AdjuntoSolicitud)
+admin.site.register(CuentaContable)

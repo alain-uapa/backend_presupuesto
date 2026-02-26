@@ -11,7 +11,8 @@ urlpatterns = [
     path('solicitudes/delete_attachment/<int:pk>/', view.eliminar_adjunto, name='eliminar_adjunto'),
     path('solicitudes/confirm/<int:pk>/', view.confirmar_solicitud, name='confirmar_solicitud'),
     path('ubicaciones/list/', ubicaciones_list, name='ubicaciones-list'),
-    path('cuentas-analiticas/list/', cuentas_analiticas_list, name='cuentas-list'),  
+    path('cuentas-analiticas/list/', cuentas_analiticas_list, name='cuentas-analiticas-list'),  
+    path('cuentas-contables/list/', cuentas_contables_list, name='cuentas-contables-list'),  
     path('certificado/edit/<int:pk>/', pdf_view.get_certificado_template, name='get_certificado_template'),
     path('certificado/create/<int:pk>/', pdf_view.generar_certificado_pdf, name='certificado_create'),  
 ]

@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from weasyprint import HTML
 from core.utils.logging import log_error
-from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud, SecuenciaCertificado
+from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud, SecuenciaCertificado, CuentaContable
 from .google_drive import upload_to_drive
 from datetime import datetime
 import json
@@ -40,10 +40,16 @@ def generar_certificado_pdf(request, pk):
     try:
         solicitud = get_object_or_404(SolicitudPresupuesto, pk=pk)
         data = request.POST 
+        
+        cuenta_contable_id = data.get('cuenta_contable')
+        if cuenta_contable_id:
+            solicitud.cuenta_contable = cuenta_contable_id
+            solicitud.save(update_fields=['cuenta_contable_id'])
+        
         context = {
             'centro_costo': data.get('centro_costo'),
             'cuenta_analitica': solicitud.cuenta_analitica,
-            'cuenta_contable': data.get('cuenta_contable'),
+            'cuenta_contable': cuenta_contable_id,
             'sequence_number': data.get('sequence_number'),
             'rubro_presupuestal': solicitud.rubro_presupuestal,
             'monto': solicitud.monto_a_ejecutar,
