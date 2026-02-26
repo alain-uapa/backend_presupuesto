@@ -137,7 +137,7 @@ def crear_solicitud(request):
                 'solicitante': nueva_solicitud.colaborador.get_full_name(),
                 'sede': str(nueva_solicitud.ubicacion),
                 'monto_a_ejecutar': nueva_solicitud.monto_a_ejecutar,
-                'url_sistema': FrontendRequest.VIEW.url(request, nueva_solicitud.id)
+                'url_solicitud': FrontendRequest.VIEW.url(request, nueva_solicitud.id)
             }
             enviar_email_solicitud_creada(context)        
             serializer = BaseSerializer([nueva_solicitud])
@@ -190,34 +190,20 @@ def cambiar_estado(request, pk):
             # 4. Guardar cambios
             solicitud.save()
 
-            # 5. Respuesta
-            serializer = BaseSerializer([solicitud])                  
-            context={
-                'id': solicitud.id,
-                'solicitante': solicitud.colaborador.get_full_name(),
-                'email_solicitante': solicitud.colaborador.email, #Solo para el envío de email
-                'titulo': solicitud.titulo,
-                'monto_a_ejecutar': solicitud.monto_a_ejecutar,
-                'estado': nuevo_estado.upper(),
-                'url_sistema': FrontendRequest.VIEW.url(request, solicitud.id)
-            }
-            email_template = 'presupuesto/cambio_estado.html'
-            context={
-                'id': solicitud.id,
-                'solicitante': solicitud.colaborador.get_full_name(),
-                'titulo': solicitud.titulo,
-                'monto_a_ejecutar': solicitud.monto_a_ejecutar,
-                'estado': nuevo_estado.upper(),
-                'url_sistema': FrontendRequest.VIEW.url(request, solicitud.id)
-            }
-            #TODO: bcc_list
-            send_to_list = [solicitud.colaborador.email]
-            send_email(
-                subject='Solicitud de Presupuesto', 
-                send_to_list=send_to_list, 
-                template=email_template, 
-                context=context,                
-            )  
+            serializer = BaseSerializer([solicitud])  
+            if nuevo_estado.upper() == 'RECHAZADA':          
+                context={
+                    'url_solicitud': FrontendRequest.VIEW.url(request, solicitud.id)
+                }
+                email_template = 'presupuesto/solicitud_rechazada.html'
+                
+                send_to_list = [solicitud.colaborador.email]
+                send_email(
+                    subject='Solicitud de Presupuesto', 
+                    send_to_list=send_to_list, 
+                    template=email_template, 
+                    context=context,                
+                )  
             return JsonResponse({
                 "mensaje": f"Estado actualizado a {nuevo_estado} con éxito",
                 "datos": serializer.serialize()[0]

@@ -10,15 +10,16 @@
 
         <div style="padding: 30px;">
             <p style="font-size: 16px;">Hola, <strong>Equipo de Compras</strong>,</p>
-            <p>Se informa que la siguiente solicitud ha sido <strong>finalmente aprobada</strong> y el certificado de disponibilidad presupuestaria ya está generado.</p>
+            <p>Se informa que la siguiente solicitud ha sido <strong>APROBADA</strong> y el certificado de disponibilidad presupuestaria ya está generado.</p>
             
             <div style="background-color: #f0fdf4; padding: 20px; border-left: 4px solid #10b981; border-radius: 4px; margin: 25px 0;">
+                <p style="margin: 0 0 8px 0;"><strong>Solicitante:</strong> {{ solicitante }}</p>
                 <p style="margin: 0 0 8px 0;"><strong>Concepto:</strong> {{ titulo }}</p>
                 <p style="margin: 0 0 8px 0;"><strong>Monto Aprobado:</strong> <span style="color: #059669; font-weight: bold;">RD$ {{ monto_a_ejecutar }}</span></p>
                 <p style="margin: 0;"><strong>Sede:</strong> {{ sede }}</p>
             </div>
 
-            <p style="margin-bottom: 25px;">Puedes descargar el certificado oficial y revisar los adjuntos haciendo clic debajo:</p>
+            <p style="margin-bottom: 25px;">Para finalizar el proceso, es necesario acceder al siguiente enlace, revisar el certificado y emitir el acuse de recibo correspondiente:</p>
 
             <div style="text-align: center; margin-bottom: 20px;">
                 <a href="{{ url_solicitud }}" 

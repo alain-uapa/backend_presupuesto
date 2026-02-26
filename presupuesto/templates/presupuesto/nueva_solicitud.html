@@ -1,24 +1,36 @@
 <html>
-<body style="font-family: sans-serif; color: #334155; line-height: 1.6;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-        <h2 style="color: #1e40af;">Nueva Solicitud</h2>
-        <p>Se ha registrado una nueva solicitud en el sistema.</p>
-        
-        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0;"><strong>Título:</strong> {{ titulo }}</p>
-            <p style="margin: 0;"><strong>Solicitante:</strong> {{ solicitante }}</p>     
-            <p style="margin: 0;"><strong>Sede:</strong> {{ sede }}</p>       
-            <p style="margin: 0;"><strong>Monto:</strong> ${{ monto_a_ejecutar }}</p>            
-        </div>
+    <body style="font-family: sans-serif; color: #334155; line-height: 1.6; background-color: #f4f7f6; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            
+            <div style="background-color: #fef3c7; padding: 20px; text-align: center;">
+                <h2 style="color: #111; margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;">
+                    Nueva Solicitud
+                </h2>
+            </div>
 
-        <a href="{{ url_sistema }}" 
-           style="display: inline-block; padding: 10px 20px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
-           Ver en el Sistema
-        </a>
-        
-        <p style="font-size: 12px; color: #94a3b8; margin-top: 30px;">
-            Este es un correo automático, por favor no lo respondas.
-        </p>
-    </div>
-</body>
+            <div style="padding: 30px;">
+                <p style="font-size: 16px;">Hola,</p>
+                <p>Se ha registrado una nueva solicitud en el sistema.</p>
+                
+                <div style="background-color: #fffbeb; padding: 20px; border-left: 4px solid #fef3c7; border-radius: 4px; margin: 25px 0;">
+                    <p style="margin: 0 0 8px 0;"><strong>Solicitante:</strong> {{ solicitante }}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Concepto:</strong> {{ titulo }}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Monto:</strong>RD$ {{ monto_a_ejecutar }}</p>
+                    <p style="margin: 0;"><strong>Sede:</strong> {{ sede }}</p>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <a href="{{ url_solicitud }}" 
+                    style="display: inline-block; padding: 14px 28px; background-color: #fef3c7; color: #000; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
+                    Ver en el Sistema
+                    </a>
+                </div>
+                
+                <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                    Gestión Presupuestaria UAPA &bull; 2026<br>
+                    Este es un mensaje automático del sistema de finanzas.
+                </p>
+            </div>
+        </div>
+    </body>
 </html>

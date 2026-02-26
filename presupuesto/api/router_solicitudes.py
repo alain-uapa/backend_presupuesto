@@ -46,7 +46,6 @@ def listar_solicitudes(request):
     qs = SolicitudPresupuesto.objects.select_related(
         'colaborador', 'ubicacion', 'cuenta_analitica'
     )
-    print(qs.all())
     if request.user.is_superuser or request.user.groups.filter(name='Supervisor').exists():
         return qs.all()
     

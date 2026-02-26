@@ -28,7 +28,7 @@ def enviar_email_solicitud_creada(context):
     if usuarios_value:
         send_to_list = [email.strip() for email in usuarios_value.replace(';', ',').split(',') if email.strip()]
     else:
-        send_to_list = []     
+        send_to_list = []  
     send_email(
                 subject='Nueva Solicitud de Presupuesto',
                 send_to_list=send_to_list,
@@ -50,7 +50,7 @@ def enviar_email_a_compras(request, solicitud):
         'sede': sede.nombre,
         'url_solicitud': FrontendRequest.CONFIRM.url(request, solicitud.id)
     }
-    send_to_list = [context.email_solicitante]
+    send_to_list.append(solicitud.colaborador.email)
     send_email(
         subject='Presupuesto Aprobado', 
         send_to_list=send_to_list, 
