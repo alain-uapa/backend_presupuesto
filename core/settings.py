@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+import os
 from corsheaders.defaults import default_headers
 from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -88,10 +89,12 @@ CSRF_TRUSTED_ORIGINS = [
 
 ROOT_URLCONF = 'core.urls'
 
+REACT_APP_DIR = os.path.join(BASE_DIR, 'frontend')
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [REACT_APP_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -103,7 +106,16 @@ TEMPLATES = [
         },
     },
 ]
-
+STATICFILES_DIRS = [
+    # Esto le dice a Django dónde están los JS/CSS/Imágenes compilados
+    os.path.join(REACT_APP_DIR, 'assets'), 
+    # Y la carpeta raíz del build para el favicon
+    REACT_APP_DIR, 
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Si tienes esto en True, Google no podrá "leer" el estado de tu app para autenticarte
+SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
