@@ -61,7 +61,7 @@ def google_login(request):
                 user.groups.clear()
                 user.groups.add(grupo)
                 rol_usuario = 'Colaborador'
-            
+         
             return JsonResponse({
                 "mensaje": "Sesión iniciada correctamente",
                 "user": {
@@ -69,6 +69,7 @@ def google_login(request):
                         "email": user.email, 
                         "first_name": user.first_name,
                         "last_name": user.last_name,
+                        "picture": idinfo['picture'],
                         "role": rol_usuario
                         }
             })
@@ -77,3 +78,5 @@ def google_login(request):
             return JsonResponse({"error": "Token de Google inválido"}, status=400)
     
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
+    
