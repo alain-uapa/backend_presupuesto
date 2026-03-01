@@ -8,7 +8,7 @@ from django.core.files.base import ContentFile
 from weasyprint import HTML
 from core.utils.logging import log_error
 from .models import SolicitudPresupuesto, Configuracion, AdjuntoSolicitud, SecuenciaCertificado, CuentaContable
-from .google_drive import upload_to_drive
+from .google_drive import obtener_carpeta_en_drive, upload_to_drive
 from datetime import datetime
 import json
 from .utils import enviar_email_a_compras
@@ -65,11 +65,12 @@ def generar_certificado_pdf(request, pk):
         
         archivo_drive = ContentFile(pdf_file, name=f"certificacion_{pk}.pdf")
         
-        ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
-        if not ID_FOLDER_DRIVE:
+        parent_folder_id = Configuracion.get_value('ID_FOLDER_DRIVE')
+        if not parent_folder_id:
             raise ValueError("ID_FOLDER_DRIVE no configurado")
-        
-        resultado_drive = upload_to_drive(archivo_drive, ID_FOLDER_DRIVE, mimetype='application/pdf')
+        id_destino = obtener_carpeta_en_drive(parent_folder_id) #Obtiene o crea una carpeta con con el nombre 'YYYY-MM' actual
+    
+        resultado_drive = upload_to_drive(archivo_drive, id_destino, mimetype='application/pdf')
         
         AdjuntoSolicitud.objects.create(
             solicitud=solicitud,

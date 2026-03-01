@@ -12,7 +12,7 @@ from presupuesto import utils
 from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
-from .google_drive import upload_to_drive, delete_from_drive
+from .google_drive import obtener_carpeta_en_drive, upload_to_drive, delete_from_drive
 from emails.mailer import send_email
 from core.utils.logging import log_error
 from .utils import enviar_email_solicitud_creada, enviar_email_a_compras, FrontendRequest
@@ -58,9 +58,11 @@ def procesar_datos_solicitud(request, solicitud=None):
     solicitud.save()
 
     # Procesar archivos en Drive
-    ID_FOLDER_DRIVE = Configuracion.get_value('ID_FOLDER_DRIVE')
+    parent_folder_id = Configuracion.get_value('ID_FOLDER_DRIVE')
+    id_destino = obtener_carpeta_en_drive(parent_folder_id) #Obtiene o crea una carpeta con con el nombre 'YYYY-MM' actual
+    print(id_destino)
     for f in archivos:
-        resultado_drive = upload_to_drive(f, ID_FOLDER_DRIVE)
+        resultado_drive = upload_to_drive(f, id_destino)
         AdjuntoSolicitud.objects.create(
             solicitud=solicitud,
             nombre=f.name,

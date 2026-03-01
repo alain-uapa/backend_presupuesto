@@ -199,3 +199,16 @@ class SecuenciaCertificado(models.Model):
 
     def __str__(self):
         return f"Sequencia {self.anno}: {self.numero}"
+
+
+class DriveFolder(models.Model):
+    name = models.CharField(max_length=255, unique=True, verbose_name="Año-Mes")
+    drive_id = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+            verbose_name = "Carpeta de Google Drive"
+            verbose_name_plural = "Carpetas de Google Drive"
+
+    def __str__(self):
+        return f"{self.name} -> ({self.drive_id})"

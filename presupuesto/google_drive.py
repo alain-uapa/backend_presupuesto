@@ -1,12 +1,13 @@
 import json
 import os
+import datetime
 from django.conf import settings
 from googleapiclient.http import MediaIoBaseUpload
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from django.http import JsonResponse
 from core.utils.login_required import login_required_json 
-from presupuesto.models import GoogleConfig
+from presupuesto.models import DriveFolder, GoogleConfig
 """
 Sube cualquier tipo de archivo a Google Drive.
 archivo_django: El objeto que viene de request.FILES
@@ -33,31 +34,6 @@ def authtenticate():
         config.credentials_json, scopes=SCOPES)
     return creds
 
-@login_required_json
-def uploadfile(request):
-    if request.method == 'POST' and request.FILES.get('archivo'):
-        archivo = request.FILES['archivo']
-        
-        # Validar extensiones permitidas (Opcional pero recomendado)
-        extensiones_permitidas = [
-            'application/pdf', 
-            'image/jpeg', 
-            'image/png', 
-            'application/msword', 
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ]
-        
-        if archivo.content_type not in extensiones_permitidas:
-            return JsonResponse({"error": "Tipo de archivo no permitido"}, status=400)
-
-        # Llamamos a la función genérica
-        resultado = upload_to_drive(archivo, 'ID_DE_TU_CARPETA')
-        
-        return JsonResponse({
-            "mensaje": "Archivo subido con éxito",
-            "drive_id": resultado.get('id'),
-            "url": resultado.get('webViewLink')
-        })
 
 def upload_to_drive(archivo_django, folder_id, mimetype=None):
 
@@ -97,3 +73,47 @@ def delete_from_drive(file_id):
         fileId=file_id, 
         supportsAllDrives=True
     ).execute()
+
+def obtener_carpeta_en_drive(parent_id_raiz):
+    creds = authtenticate() # Tu función de autenticación
+    service = build('drive', 'v3', credentials=creds)
+    
+    # 1. Generar el formato YYYY-MM
+    ahora = datetime.datetime.now()
+    nombre_carpeta = ahora.strftime('%Y-%m') # Resultado: "2024-05"
+
+    # 2. Intentar obtener de nuestra Base de Datos
+    folder_db = DriveFolder.objects.filter(name=nombre_carpeta).first()
+    
+    if folder_db:
+        return folder_db.drive_id
+    # 3. Si NO está en la DB, buscar en Google Drive por si ya existe allí
+    query = (f"name = '{nombre_carpeta}' and '{parent_id_raiz}' in parents "
+             f"and mimeType = 'application/vnd.google-apps.folder' and trashed = false")
+    
+    respuesta = service.files().list(
+        q=f"'{parent_id_raiz}' in parents and trashed = false",
+        fields='files(id, name)',
+        
+        # --- ESTOS TRES PARÁMETROS SON LA CLAVE ---
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True        
+    ).execute()
+
+    archivos = respuesta.get('files', [])
+
+    if archivos:
+        drive_id = archivos[0]['id']
+    else:
+        # 4. Si no existe en Google Drive, crearla
+        metadata = {
+            'name': nombre_carpeta,
+            'mimeType': 'application/vnd.google-apps.folder',
+            'parents': [parent_id_raiz]
+        }
+        nueva_carpeta = service.files().create(body=metadata, fields='id', supportsAllDrives=True).execute()
+        drive_id = nueva_carpeta.get('id')
+    # 5. Guardar en nuestra DB para que el próximo usuario no tenga que esperar
+    DriveFolder.objects.create(name=nombre_carpeta, drive_id=drive_id)
+    
+    return drive_id
