@@ -44,4 +44,4 @@ uritemplate==4.2.0
 urllib3==2.6.3
 weasyprint==66.0
 webencodings==0.5.1
-zopfli==0.4.1
+zopfli==0.2.3
