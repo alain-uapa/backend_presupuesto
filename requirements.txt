@@ -10,7 +10,7 @@ Django==4.2.29
 django-cors-headers==4.9.0
 django-ninja==1.5.3
 django-weasyprint==2.4.0
-fonttools==4.61.1
+fonttools==4.60.2
 google-api-core==2.30.0
 google-api-python-client==2.190.0
 google-auth==2.48.0
