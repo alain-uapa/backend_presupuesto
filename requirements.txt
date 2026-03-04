@@ -29,7 +29,7 @@ pyasn1_modules==0.4.2
 pycparser==2.23
 pydantic==2.12.5
 pydantic_core==2.41.5
-pydyf==0.12.1
+pydyf==0.11.0
 pyparsing==3.3.2
 pyphen==0.17.2
 requests==2.32.5
