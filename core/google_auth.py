@@ -52,14 +52,12 @@ def google_login(request):
                 # Ya es Supervisor, no modificar su grupo
                 rol_usuario = 'Supervisor'
             elif es_usuario_compra:
-                grupo = Group.objects.get_or_create(name='Compra')[0]
-                user.groups.clear()
-                user.groups.add(grupo)
                 rol_usuario = 'Compra'
-            else:
-                grupo = Group.objects.get_or_create(name='Colaborador')[0]
-                user.groups.clear()
+            elif created:
+                grupo, _ = Group.objects.get_or_create(name='Colaborador')
                 user.groups.add(grupo)
+                rol_usuario = 'Colaborador'
+            else:
                 rol_usuario = 'Colaborador'
          
             return JsonResponse({
