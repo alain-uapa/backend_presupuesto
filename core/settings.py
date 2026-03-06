@@ -115,7 +115,6 @@ STATICFILES_DIRS = [
     # Y la carpeta raíz del build para el favicon
     REACT_APP_DIR, 
 ]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Si tienes esto en True, Google no podrá "leer" el estado de tu app para autenticarte
 SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
@@ -171,7 +170,7 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_ROOT = BASE_DIR / 'collectstatic'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATIC_URL = '/django_static/'
 
 # Default primary key field type
