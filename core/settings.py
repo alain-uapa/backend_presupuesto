@@ -29,6 +29,7 @@ SECRET_KEY = 'django-insecure-@u!kyz^xws@o0-%op9$j1htge^x#q(@9)c^-eohcv_qjqn53li
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    'gtsst.uapa.edu.do',
     'abiotic-kenzie-braggadocian.ngrok-free.dev',
     'localhost',
     '34.121.55.146',
