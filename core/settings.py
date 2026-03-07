@@ -85,10 +85,16 @@ SESSION_COOKIE_SAMESITE = 'None'
 
 CSRF_TRUSTED_ORIGINS = [
     "http://34.121.55.146:8081",
+    'http://localhost:3000',
     'http://127.0.0.1:3000',
     "https://*.usercontent.goog",
-    "https://abiotic-kenzie-braggadocian.ngrok-free.dev"
+    "https://abiotic-kenzie-braggadocian.ngrok-free.dev",
+    "https://gtsst.uapa.edu.do",
 ]
+
+# Como estás detrás de un proxy (Apache), esto le dice a Django 
+# que confíe en que la petición original era HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 ROOT_URLCONF = 'core.urls'
 
