@@ -192,6 +192,12 @@ except ImportError:
     # Si falla, estamos en PRODUCCIÓN (o el servidor real)
     ENTORNO = "PRODUCCIÓN (Servidor UAPA)"
     COLOR_MSG = "\033[92m"  # Verde para producción
+    # Esto obligará a Django a generar todas las URLs con /presupuesto/
+    FORCE_SCRIPT_NAME = '/presupuesto'
+    
+    # Asegúrate también de tener esto en producción para el SSL de Apache
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
 finally:
     # Esto imprime un mensaje elegante en la terminal al iniciar
     reset_color = "\033[0m"
