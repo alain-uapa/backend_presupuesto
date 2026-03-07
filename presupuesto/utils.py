@@ -6,21 +6,27 @@ from .models import Sede
 from enum import Enum
 
 class FrontendRequest(Enum):
-    VIEW = f"{settings.PREFIX_URL}/request/{id}/"
-    EDIT = f"{settings.PREFIX_URL}/request/{id}/edit"
-    CONFIRM = f"{settings.PREFIX_URL}/request/{id}/confirm"
+    VIEW = "/request/{id}/"
+    EDIT = "/request/{id}/edit"
+    CONFIRM = "/request/{id}/confirm"
 
     def url(self, request, solicitud_id):
-        relative_url = self.value.format(id=solicitud_id)
-        return request.build_absolute_uri(relative_url)
+        """
+        Construye la URL inyectando el prefijo de settings.
+        Requiere el objeto 'request' para obtener el dominio automáticamente.
+        """
+        # 1. Obtenemos el path relativo del Enum (ej: /request/8/)
+        path_del_enum = self.value.format(id=solicitud_id)
+        
+        # 2. Limpiamos el prefijo de settings para evitar dobles barras
+        prefijo = settings.PREFIX_URL.rstrip('/')
+        
+        # 3. Combinamos: /presupuesto + /request/8/
+        full_path = f"{prefijo}{path_del_enum}"
+        print(full_path)
+        # 4. Django le añade el protocolo y dominio: https://gtsst.uapa.edu.do/presupuesto/request/8/
+        return request.build_absolute_uri(full_path)
 
-# def generar_url_frontend(request, relative_url):
-#     # Obtenemos la URL base (ej: https://presupuestos.uapa.edu.do)
-#     full_url = request.build_absolute_uri(relative_url)
-    
-#     # Construimos la ruta hacia el componente de React
-#     # relative_url sería algo como "/solicitudes/5"
-#     return full_url
 
 def enviar_email_solicitud_creada(context):
     template='presupuesto/nueva_solicitud.html'            
