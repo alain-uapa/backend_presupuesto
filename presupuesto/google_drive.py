@@ -75,27 +75,34 @@ def delete_from_drive(file_id):
     ).execute()
 
 def obtener_carpeta_en_drive(parent_id_raiz):
-    creds = authtenticate() # Tu función de autenticación
-    service = build('drive', 'v3', credentials=creds)
-    
     # 1. Generar el formato YYYY-MM
     ahora = datetime.datetime.now()
-    nombre_carpeta = ahora.strftime('%Y-%m') # Resultado: "2024-05"
+    nombre_carpeta = ahora.strftime('%Y-%m')
 
-    # 2. Intentar obtener de nuestra Base de Datos
+    # 2. Intentar obtener de nuestra Base de Datos primero (Ahorra tiempo de API)
     folder_db = DriveFolder.objects.filter(name=nombre_carpeta).first()
-    
     if folder_db:
         return folder_db.drive_id
-    # 3. Si NO está en la DB, buscar en Google Drive por si ya existe allí
-    query = (f"name = '{nombre_carpeta}' and '{parent_id_raiz}' in parents "
-             f"and mimeType = 'application/vnd.google-apps.folder' and trashed = false")
+
+    # --- Si no está en DB, vamos a Google Drive ---
+    creds = authtenticate() 
+    service = build('drive', 'v3', credentials=creds)
+    
+    drive_id = None
+
+    # 3. Buscar si ya existe en Google Drive (Evitar duplicados)
+    # Corregimos la query: debe ser exacta para evitar traer carpetas similares
+    query = (
+        f"name = '{nombre_carpeta}' and "
+        f"'{parent_id_raiz}' in parents and "
+        f"mimeType = 'application/vnd.google-apps.folder' and "
+        f"trashed = false"
+    )
     
     respuesta = service.files().list(
-        q=f"'{parent_id_raiz}' in parents and trashed = false",
+        q=query,
         fields='files(id, name)',
-        
-        # --- ESTOS TRES PARÁMETROS SON LA CLAVE ---
+        spaces='drive',
         supportsAllDrives=True,
         includeItemsFromAllDrives=True        
     ).execute()
@@ -103,17 +110,28 @@ def obtener_carpeta_en_drive(parent_id_raiz):
     archivos = respuesta.get('files', [])
 
     if archivos:
+        # Si existe, tomamos el ID del primer resultado
         drive_id = archivos[0]['id']
     else:
-        # 4. Si no existe en Google Drive, crearla
+        # 4. Si no existe en Google Drive, crearla dentro de la carpeta raíz
         metadata = {
             'name': nombre_carpeta,
             'mimeType': 'application/vnd.google-apps.folder',
             'parents': [parent_id_raiz]
         }
-        nueva_carpeta = service.files().create(body=metadata, fields='id', supportsAllDrives=True).execute()
+        nueva_carpeta = service.files().create(
+            body=metadata, 
+            fields='id', 
+            supportsAllDrives=True # Necesario si parent_id_raiz es de una Shared Drive
+        ).execute()
         drive_id = nueva_carpeta.get('id')
-    # 5. Guardar en nuestra DB para que el próximo usuario no tenga que esperar
-    DriveFolder.objects.create(name=nombre_carpeta, drive_id=drive_id)
+
+    # 5. Guardar en nuestra DB para la próxima vez
+    if drive_id:
+        # Usamos update_or_create para ser más robustos
+        DriveFolder.objects.update_or_create(
+            name=nombre_carpeta, 
+            defaults={'drive_id': drive_id}
+        )
     
     return drive_id

@@ -138,7 +138,7 @@ class Configuracion(models.Model):
         Returns:
             El valor de la configuración si se encuentra, None en caso contrario.
         """
-        # Buscar configuraciones que contengan 'USUARIOS_COMRRA_'
+        # Buscar configuraciones que contengan 'USUARIOS_COMPRA_'
         # y que terminen con el código de sede
         config = cls.objects.filter(
             nombre__contains='USUARIOS_COMPRA_',
