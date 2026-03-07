@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from emails.mailer import send_email
 from presupuesto.models import Configuracion
@@ -5,14 +6,13 @@ from .models import Sede
 from enum import Enum
 
 class FrontendRequest(Enum):
-    VIEW = "/request/{id}/"
-    EDIT = "/request/{id}/edit"
-    CONFIRM = "/request/{id}/confirm"
+    VIEW = f"{settings.PREFIX_URL}/request/{id}/"
+    EDIT = f"{settings.PREFIX_URL}/request/{id}/edit"
+    CONFIRM = f"{settings.PREFIX_URL}/request/{id}/confirm"
 
     def url(self, request, solicitud_id):
         relative_url = self.value.format(id=solicitud_id)
         return request.build_absolute_uri(relative_url)
-
 
 # def generar_url_frontend(request, relative_url):
 #     # Obtenemos la URL base (ej: https://presupuestos.uapa.edu.do)
