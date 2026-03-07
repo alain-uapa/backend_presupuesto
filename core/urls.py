@@ -23,7 +23,7 @@ from core.google_auth import google_login
 from presupuesto.views import render_app
 
 urlpatterns = [
-    path('admin/logout/', auth_views.LogoutView.as_view(next_page='/'), name='admin_logout'),
+    path('admin/logout/', auth_views.LogoutView.as_view(next_page='/presupuesto/'), name='admin_logout'),
     path('admin/', admin.site.urls),
     path('api/google-auth/', google_login),
     path("api/", include('presupuesto.urls')),
