@@ -195,6 +195,7 @@ except ImportError:
     COLOR_MSG = "\033[92m"  # Verde para producción
     # Esto obligará a Django a generar todas las URLs con /presupuesto/
     PREFIX_URL = '/presupuesto'
+    DEBUG = False
 
 finally:
     # Esto imprime un mensaje elegante en la terminal al iniciar
