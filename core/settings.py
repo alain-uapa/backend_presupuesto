@@ -201,6 +201,8 @@ finally:
     reset_color = "\033[0m"
     print(f"\n{COLOR_MSG}>>> [SISTEMA PRESUPUESTO] Conectado a: {ENTORNO}{reset_color}\n")
 
+STATIC_URL = f'{PREFIX_URL}/django_static/'
+
 from emails.config import *
 
 LOGGING = {
