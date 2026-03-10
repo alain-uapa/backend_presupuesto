@@ -1,20 +1,22 @@
-{% load static %}
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer-when-downgrade">
-    <link rel="icon" href="{% static 'favicon-32x32.png' %}" />
+    <link rel="icon" href="/presupuesto/django_static/assets/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/presupuesto/django_static/assets/favicon-32x32.png" />
     <title>UAPA - Gestión de Presupuesto</title>
-
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" crossorigin src="{% static 'index.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'index.css' %}">
-</head>
-<body>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; color: #333333; }
+    </style>
+<script type="module" crossorigin src="/presupuesto/django_static/assets/index.js"></script>
+<link rel="stylesheet" crossorigin href="/presupuesto/django_static/assets/index.css">
+
+<body class="bg-[#F8F9FA] text-[#333333]">
     <div id="root"></div>
 </body>
 </html>
