@@ -61,7 +61,7 @@ def generar_certificado_pdf(request, pk):
             'fecha_aprobacion': datetime.now().strftime('%d/%m/%Y'),
             'aprobado_por': request.user.get_full_name()
         }
-        pdf_file = generate_pdf('presupuesto/certificado_template.html', context, f"certificacion_{pk}")   
+        pdf_file = generate_pdf(request, 'presupuesto/certificado_template.html', context, f"certificacion_{pk}")   
         
         archivo_drive = ContentFile(pdf_file, name=f"certificacion_{pk}.pdf")
         
@@ -100,8 +100,10 @@ def generar_certificado_pdf(request, pk):
         log_error(request, e, {'funcion': 'generar_certificado_pdf'})
         return JsonResponse({"error": str(e)}, status=400)
     
-def generate_pdf(template, context, filename):
+def generate_pdf(request, template, context, filename):
     html_string = render_to_string(template, context)    
-    base_url = getattr(settings, 'BASE_URL', '')
+    prefijo = settings.PREFIX_URL.rstrip('/')
+    base_url = request.build_absolute_uri(prefijo)
+    print(base_url)
     pdf_file = HTML(string=html_string, base_url=base_url).write_pdf()
     return pdf_file
