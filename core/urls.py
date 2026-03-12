@@ -17,13 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path, re_path
 from django.contrib.auth import views as auth_views
+from django.conf import settings
 from presupuesto import urls
 from presupuesto.api import api
 from core.google_auth import google_login
 from presupuesto.views import render_app
 
 urlpatterns = [
-    path('admin/logout/', auth_views.LogoutView.as_view(next_page='/presupuesto/'), name='admin_logout'),
+    path('admin/logout/', auth_views.LogoutView.as_view(next_page=settings.PREFIX_URL + '/'), name='admin_logout'),
     path('admin/', admin.site.urls),
     path('api/google-auth/', google_login),
     path("api/", include('presupuesto.urls')),
