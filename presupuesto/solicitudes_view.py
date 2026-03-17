@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 
 from presupuesto import utils
-from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede
+from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede, ComentarioSolicitud
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
 from .google_drive import obtener_carpeta_en_drive, upload_to_drive, delete_from_drive
@@ -60,7 +60,6 @@ def procesar_datos_solicitud(request, solicitud=None):
     # Procesar archivos en Drive
     parent_folder_id = Configuracion.get_value('ID_FOLDER_DRIVE')
     id_destino = obtener_carpeta_en_drive(parent_folder_id) #Obtiene o crea una carpeta con con el nombre 'YYYY-MM' actual
-    print(id_destino)
     for f in archivos:
         resultado_drive = upload_to_drive(f, id_destino)
         AdjuntoSolicitud.objects.create(
@@ -74,9 +73,13 @@ def procesar_datos_solicitud(request, solicitud=None):
 
 @login_required_json
 def solicitudes_list(request):
+    from django.db.models import Prefetch
     base_qs = SolicitudPresupuesto.objects.select_related(
        'colaborador', 'ubicacion', 'cuenta_analitica'
-    ).prefetch_related('adjuntos')
+    ).prefetch_related(
+        'adjuntos', 
+        Prefetch('comentarios', queryset=ComentarioSolicitud.objects.select_related('supervisor').order_by('-fecha_creacion'))
+    )
   
     # Buscar configuración de usuarios de contabilidad por email del usuario
     usuario_compra = Configuracion.objects.filter(
@@ -119,6 +122,14 @@ def solicitudes_list(request):
                 'es_certificado': a.es_certificado,
                 'aprobado': a.aprobado
             } for a in obj_original.adjuntos.all()
+        ]
+        item['comments'] = [
+            {
+                'id': c.id,
+                'contenido': c.contenido,
+                'supervisor': c.supervisor.get_full_name() if c.supervisor.get_full_name() else c.supervisor.username,
+                'fecha_creacion': c.fecha_creacion.isoformat()
+            } for c in obj_original.comentarios.all()
         ]
     return JsonResponse(data_serializada, safe=False)
 
@@ -184,6 +195,30 @@ def cambiar_estado(request, pk):
 
             # 3. Lógica de negocio para el estado                                                                                                                                                                                   
             solicitud.estado = nuevo_estado
+            
+            # Si es POR_REVISION, crear comentario obligatorio
+            if nuevo_estado.upper() == 'POR_REVISION':
+                if not comentarios:
+                    return JsonResponse({"error": "El comentario es obligatorio para estado Por Revisión"}, status=400)
+                ComentarioSolicitud.objects.create(
+                    solicitud=solicitud,
+                    supervisor=request.user,
+                    contenido=comentarios
+                )
+                context = {
+                    'titulo': solicitud.titulo,
+                    'comentario': comentarios,
+                    'sede': solicitud.ubicacion.nombre,
+                    'monto_a_ejecutar': solicitud.monto_a_ejecutar,
+                    'solicitante': solicitud.colaborador.get_full_name(),
+                    'url_solicitud': FrontendRequest.VIEW.url(request, solicitud.id)
+                }
+                send_email(
+                    subject='Tu solicitud requiere correcciones',
+                    send_to_list=[solicitud.colaborador.email],
+                    template='presupuesto/solicitud_en_revision.html',
+                    context=context
+                )
             
             # Si es rechazada, guardamos el comentario en el campo específico
             if nuevo_estado.upper() == 'RECHAZADA':

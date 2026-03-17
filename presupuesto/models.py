@@ -39,6 +39,7 @@ class CuentaContable(models.Model):
 class SolicitudPresupuesto(models.Model):
     ESTADO_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
+        ('POR_REVISION', 'Por Revisión'),
         ('APROBADA', 'Aprobada'),
         ('RECHAZADA', 'Rechazada'),
     ]
@@ -82,6 +83,23 @@ class SolicitudPresupuesto(models.Model):
     
     def __str__(self):
         return f"{self.titulo} - {self.colaborador.get_full_name()}"
+
+class ComentarioSolicitud(models.Model):
+    solicitud = models.ForeignKey(
+        SolicitudPresupuesto, 
+        on_delete=models.CASCADE, 
+        related_name='comentarios'
+    )
+    supervisor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='comentarios_hechos'
+    )
+    contenido = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comentario en {self.solicitud.titulo} por {self.supervisor.get_full_name()}"
 
 class AdjuntoSolicitud(models.Model):
     # Relación directa: Si se borra la solicitud, se borran las referencias de sus adjuntos
