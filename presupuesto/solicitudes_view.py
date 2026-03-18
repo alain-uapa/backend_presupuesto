@@ -126,7 +126,8 @@ def solicitudes_list(request):
                 'id': c.id,
                 'contenido': c.contenido,
                 'supervisor': c.supervisor.get_full_name() if c.supervisor.get_full_name() else c.supervisor.username,
-                'fecha_creacion': c.fecha_creacion.strftime('%d/%m/%Y')
+                'fecha_creacion': c.fecha_creacion.strftime('%d/%m/%Y'),
+                'estado': c.estado
             } for c in obj_original.comentarios.all()
         ]
     return JsonResponse(data_serializada, safe=False)
@@ -342,6 +343,47 @@ def confirmar_solicitud(request, pk):
 
         except Exception as e:
             log_error(request, e, {'funcion': 'confirmar_solicitud', 'pk': pk})
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Método no permitido. Use PATCH"}, status=405)
+
+@login_required_json
+def cambiar_estado_comentario(request, pk):
+    if request.method == 'PATCH':
+        try:
+            try:
+                comentario = ComentarioSolicitud.objects.get(pk=pk)
+            except ComentarioSolicitud.DoesNotExist:
+                return JsonResponse({"error": "Comentario no encontrado"}, status=404)
+
+            data = json.loads(request.body)
+            nuevo_estado = data.get('estado')
+
+            if nuevo_estado not in ['PENDIENTE', 'RESUELTA']:
+                return JsonResponse({"error": "Estado inválido. Use 'PENDIENTE' o 'RESUELTA'"}, status=400)
+
+            comentario.estado = nuevo_estado
+            comentario.save()
+
+            solicitud = comentario.solicitud
+            if not solicitud.comentarios.exclude(estado='RESUELTA').exists():
+                solicitud.estado = 'PENDIENTE'
+                solicitud.save()
+
+            return JsonResponse({
+                "mensaje": f"Estado del comentario actualizado a {nuevo_estado}",
+                "comentario": {
+                    "id": comentario.id,
+                    "estado": comentario.estado
+                },
+                "solicitud": {
+                    "id": solicitud.id,
+                    "estado": solicitud.estado
+                }
+            }, status=200)
+
+        except Exception as e:
+            log_error(request, e, {'funcion': 'cambiar_estado_comentario', 'pk': pk})
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido. Use PATCH"}, status=405)

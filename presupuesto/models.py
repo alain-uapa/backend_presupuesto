@@ -75,7 +75,8 @@ class SolicitudPresupuesto(models.Model):
     confirmado = models.BooleanField(default=False, verbose_name="Confirmado")
     # Nombre más apropiado para el motivo de rechazo
     observaciones_supervisor = models.TextField(blank=True, null=True, verbose_name="Observaciones de Revisión")
-  
+    updated_at = models.DateTimeField(auto_now=True)
+    
     @property
     def get_nombre_colaborador(self):
         # get_full_name() es un método estándar de Django que une first_name y last_name
@@ -97,6 +98,11 @@ class ComentarioSolicitud(models.Model):
     )
     contenido = models.TextField()
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(
+        max_length=20,
+        choices=[('PENDIENTE', 'Pendiente'), ('RESUELTA', 'Resuelta')],
+        default='PENDIENTE'
+    )
 
     def __str__(self):
         return f"Comentario en {self.solicitud.titulo} por {self.supervisor.get_full_name()}"
