@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 
 from presupuesto import utils
-from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede, ComentarioSolicitud
+from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede, RevisionSolicitud
 from core.serializer import BaseSerializer 
 from core.utils.login_required import login_required_json
 from .google_drive import obtener_carpeta_en_drive, upload_to_drive, delete_from_drive
@@ -76,7 +76,7 @@ def solicitudes_list(request):
        'colaborador', 'ubicacion', 'cuenta_analitica'
     ).prefetch_related(
         'adjuntos', 
-        Prefetch('comentarios', queryset=ComentarioSolicitud.objects.select_related('supervisor').order_by('-fecha_creacion'))
+        Prefetch('revisiones', queryset=RevisionSolicitud.objects.select_related('supervisor').order_by('-fecha_creacion'))
     )
   
     # Buscar configuración de usuarios de contabilidad por email del usuario
@@ -128,7 +128,7 @@ def solicitudes_list(request):
                 'supervisor': c.supervisor.get_full_name() if c.supervisor.get_full_name() else c.supervisor.username,
                 'fecha_creacion': c.fecha_creacion.strftime('%d/%m/%Y'),
                 'estado': c.estado
-            } for c in obj_original.comentarios.all()
+            } for c in obj_original.revisiones.all()
         ]
     return JsonResponse(data_serializada, safe=False)
 
@@ -199,7 +199,7 @@ def cambiar_estado(request, pk):
             if nuevo_estado.upper() == 'POR_REVISION':
                 if not comentarios:
                     return JsonResponse({"error": "El comentario es obligatorio para estado Por Revisión"}, status=400)
-                ComentarioSolicitud.objects.create(
+                RevisionSolicitud.objects.create(
                     solicitud=solicitud,
                     supervisor=request.user,
                     contenido=comentarios
@@ -348,13 +348,13 @@ def confirmar_solicitud(request, pk):
     return JsonResponse({"error": "Método no permitido. Use PATCH"}, status=405)
 
 @login_required_json
-def cambiar_estado_comentario(request, pk):
+def cambiar_estado_revision(request, pk):
     if request.method == 'PATCH':
         try:
             try:
-                comentario = ComentarioSolicitud.objects.get(pk=pk)
-            except ComentarioSolicitud.DoesNotExist:
-                return JsonResponse({"error": "Comentario no encontrado"}, status=404)
+                revision = RevisionSolicitud.objects.get(pk=pk)
+            except RevisionSolicitud.DoesNotExist:
+                return JsonResponse({"error": "Revision no encontrada"}, status=404)
 
             data = json.loads(request.body)
             nuevo_estado = data.get('estado')
@@ -362,19 +362,19 @@ def cambiar_estado_comentario(request, pk):
             if nuevo_estado not in ['PENDIENTE', 'RESUELTA']:
                 return JsonResponse({"error": "Estado inválido. Use 'PENDIENTE' o 'RESUELTA'"}, status=400)
 
-            comentario.estado = nuevo_estado
-            comentario.save()
+            revision.estado = nuevo_estado
+            revision.save()
 
-            solicitud = comentario.solicitud
-            if not solicitud.comentarios.exclude(estado='RESUELTA').exists():
+            solicitud = revision.solicitud
+            if not solicitud.revisiones.exclude(estado='RESUELTA').exists():
                 solicitud.estado = 'PENDIENTE'
                 solicitud.save()
 
             return JsonResponse({
-                "mensaje": f"Estado del comentario actualizado a {nuevo_estado}",
-                "comentario": {
-                    "id": comentario.id,
-                    "estado": comentario.estado
+                "mensaje": f"Estado de la revision actualizado a {nuevo_estado}",
+                "revision": {
+                    "id": revision.id,
+                    "estado": revision.estado
                 },
                 "solicitud": {
                     "id": solicitud.id,

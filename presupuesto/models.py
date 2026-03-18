@@ -85,11 +85,11 @@ class SolicitudPresupuesto(models.Model):
     def __str__(self):
         return f"{self.titulo} - {self.colaborador.get_full_name()}"
 
-class ComentarioSolicitud(models.Model):
+class RevisionSolicitud(models.Model):
     solicitud = models.ForeignKey(
         SolicitudPresupuesto, 
         on_delete=models.CASCADE, 
-        related_name='comentarios'
+        related_name='revisiones'
     )
     supervisor = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
@@ -105,7 +105,7 @@ class ComentarioSolicitud(models.Model):
     )
 
     def __str__(self):
-        return f"Comentario en {self.solicitud.titulo} por {self.supervisor.get_full_name()}"
+        return f"Revision en {self.solicitud.titulo} por {self.supervisor.get_full_name()}"
 
 class AdjuntoSolicitud(models.Model):
     # Relación directa: Si se borra la solicitud, se borran las referencias de sus adjuntos
