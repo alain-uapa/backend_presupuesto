@@ -196,10 +196,11 @@ def cambiar_estado(request, pk):
             solicitud.estado = nuevo_estado
             
             # Si es POR_REVISION, crear comentario obligatorio
+            nueva_revision = None
             if nuevo_estado.upper() == 'POR_REVISION':
                 if not comentarios:
                     return JsonResponse({"error": "El comentario es obligatorio para estado Por Revisión"}, status=400)
-                RevisionSolicitud.objects.create(
+                nueva_revision = RevisionSolicitud.objects.create(
                     solicitud=solicitud,
                     supervisor=request.user,
                     contenido=comentarios
@@ -245,7 +246,7 @@ def cambiar_estado(request, pk):
                 )  
             return JsonResponse({
                 "mensaje": f"Estado actualizado a {nuevo_estado} con éxito",
-                "datos": serializer.serialize()[0]
+                "newRevisionId": nueva_revision.id if nueva_revision else None
             })
 
         except Exception as e:
