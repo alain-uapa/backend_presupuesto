@@ -1,4 +1,3 @@
-import time
 import json
 import itertools
 from django.shortcuts import get_object_or_404
@@ -16,7 +15,6 @@ from .google_drive import obtener_carpeta_en_drive, upload_to_drive, delete_from
 from emails.mailer import send_email
 from core.utils.logging import log_error
 from .utils import enviar_email_solicitud_creada, enviar_email_a_compras, FrontendRequest
-
 #Presupuesto files
 def es_supervisor(user):
     return user.groups.filter(name='Supervisor').exists() or user.is_superuser
@@ -123,12 +121,12 @@ def solicitudes_list(request):
                 'aprobado': a.aprobado
             } for a in obj_original.adjuntos.all()
         ]
-        item['comments'] = [
+        item['review_notes'] = [
             {
                 'id': c.id,
                 'contenido': c.contenido,
                 'supervisor': c.supervisor.get_full_name() if c.supervisor.get_full_name() else c.supervisor.username,
-                'fecha_creacion': c.fecha_creacion.isoformat()
+                'fecha_creacion': c.fecha_creacion.strftime('%d/%m/%Y')
             } for c in obj_original.comentarios.all()
         ]
     return JsonResponse(data_serializada, safe=False)
