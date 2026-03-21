@@ -44,7 +44,7 @@ def _serialize_solicitudes(qs):
         item['review_notes'] = [
             {'id': c.id, 'contenido': c.contenido,
              'supervisor': c.supervisor.get_full_name() or c.supervisor.username,
-             'fecha_creacion': c.fecha_creacion.strftime('%d/%m/%Y'), 'estado': c.estado}
+             'fecha_creacion': c.fecha_creacion.isoformat(timespec='seconds'), 'estado': c.estado}
             for c in obj.revisiones.all()
         ]
     return data
