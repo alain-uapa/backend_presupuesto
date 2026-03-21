@@ -6,6 +6,7 @@ from django.core import serializers
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 
 from presupuesto import utils
 from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede, RevisionSolicitud
@@ -22,11 +23,64 @@ def es_supervisor(user):
 def es_colaborador(user):
     return user.groups.filter(name='Colaborador').exists()
 
+EXCLUDE_COLABORADOR = [
+    'colaborador__password',
+    'colaborador__is_staff',
+    'colaborador__is_superuser',
+    'colaborador__last_login'
+]
+
+
+def _serialize_solicitudes(qs):
+    serializer = BaseSerializer(qs, exclude=EXCLUDE_COLABORADOR)
+    data = serializer.serialize()
+    for item in data:
+        obj = next(x for x in qs if x.id == item['id'])
+        item['files'] = [
+            {'id': a.id, 'nombre': a.nombre, 'url_view': a.url_view,
+             'es_certificado': a.es_certificado, 'aprobado': a.aprobado}
+            for a in obj.adjuntos.all()
+        ]
+        item['review_notes'] = [
+            {'id': c.id, 'contenido': c.contenido,
+             'supervisor': c.supervisor.get_full_name() or c.supervisor.username,
+             'fecha_creacion': c.fecha_creacion.strftime('%d/%m/%Y'), 'estado': c.estado}
+            for c in obj.revisiones.all()
+        ]
+    return data
+
+
+def _build_qs(user, fecha_limite=None):
+    from django.db.models import Prefetch
+    base_qs = SolicitudPresupuesto.objects.select_related(
+        'colaborador', 'ubicacion', 'cuenta_analitica'
+    ).prefetch_related(
+        'adjuntos',
+        Prefetch('revisiones', queryset=RevisionSolicitud.objects.select_related('supervisor').order_by('-fecha_creacion'))
+    )
+    usuario_compra = Configuracion.objects.filter(
+        nombre__startswith='USUARIOS_COMPRA', valor__contains=user.email
+    ).values_list('nombre', flat=True).first()
+    sede_codigo = usuario_compra.split('_')[-1] if usuario_compra else None
+    if user.is_superuser or user.groups.filter(name='Supervisor').exists():
+        if fecha_limite:
+            return base_qs.filter(updated_at__gte=fecha_limite).order_by('-updated_at')
+        qs_pendientes = base_qs.filter(estado='PENDIENTE').order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').order_by('-fecha_solicitud')
+    elif sede_codigo:
+        if fecha_limite:
+            return base_qs.filter(updated_at__gte=fecha_limite, ubicacion__codigo=sede_codigo).order_by('-updated_at')
+        qs_pendientes = base_qs.filter(estado='PENDIENTE', ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')
+    else:
+        if fecha_limite:
+            return base_qs.filter(updated_at__gte=fecha_limite, colaborador=user).order_by('-updated_at')
+        qs_pendientes = base_qs.filter(estado='PENDIENTE', colaborador=user).order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(colaborador=user).order_by('-fecha_solicitud')
+    return list(itertools.chain(qs_pendientes, qs_otras))
+
+
 def procesar_datos_solicitud(request, solicitud=None):
-    """
-    Lógica compartida para guardar o actualizar una solicitud.
-    Si solicitud=None, crea una nueva.
-    """
     if 'multipart/form-data' in request.content_type:
         data = request.POST
         archivos = request.FILES.getlist('files')
@@ -34,30 +88,27 @@ def procesar_datos_solicitud(request, solicitud=None):
         data = json.loads(request.body)
         archivos = []
 
-    # Si no existe la solicitud, la instanciamos
     if not solicitud:
         solicitud = SolicitudPresupuesto(colaborador=request.user)
 
-    # Mapeo de campos (Crear o Editar)
     solicitud.titulo = data.get('titulo', solicitud.titulo)
     solicitud.descripcion = data.get('descripcion', solicitud.descripcion)
     solicitud.tipo_solicitud = data.get('tipo_solicitud', solicitud.tipo_solicitud)
     solicitud.rubro_presupuestal = data.get('rubro_presupuestal', solicitud.rubro_presupuestal)
-    
+
     if data.get('ubicacion_id'):
         solicitud.ubicacion_id = int(data.get('ubicacion_id'))
     if data.get('cuenta_analitica_id'):
         solicitud.cuenta_analitica_id = int(data.get('cuenta_analitica_id'))
-    
+
     solicitud.monto_a_ejecutar = float(data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar))
     solicitud.presupuesto_pre_aprobado = float(data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado))
 
     solicitud.full_clean()
     solicitud.save()
 
-    # Procesar archivos en Drive
     parent_folder_id = Configuracion.get_value('ID_FOLDER_DRIVE')
-    id_destino = obtener_carpeta_en_drive(parent_folder_id) #Obtiene o crea una carpeta con con el nombre 'YYYY-MM' actual
+    id_destino = obtener_carpeta_en_drive(parent_folder_id)
     for f in archivos:
         resultado_drive = upload_to_drive(f, id_destino)
         AdjuntoSolicitud.objects.create(
@@ -71,66 +122,16 @@ def procesar_datos_solicitud(request, solicitud=None):
 
 @login_required_json
 def solicitudes_list(request):
-    from django.db.models import Prefetch
-    base_qs = SolicitudPresupuesto.objects.select_related(
-       'colaborador', 'ubicacion', 'cuenta_analitica'
-    ).prefetch_related(
-        'adjuntos', 
-        Prefetch('revisiones', queryset=RevisionSolicitud.objects.select_related('supervisor').order_by('-fecha_creacion'))
-    )
-  
-    # Buscar configuración de usuarios de contabilidad por email del usuario
-    usuario_compra = Configuracion.objects.filter(
-        nombre__startswith='USUARIOS_COMPRA',
-        valor__contains=request.user.email
-    ).values_list('nombre', flat=True).first()
-  
-    # Extraer el código de sede (lo que está después del último '_')
-    # Ejemplo: 'USUARIOS_COMPRA_RSD' -> 'RSD'
-    sede_codigo = None
-    if usuario_compra:
-        sede_codigo = usuario_compra.split('_')[-1]
-    if request.user.is_superuser or request.user.groups.filter(name__in=['Supervisor']).exists():
-        qs_pendientes = base_qs.filter(estado='PENDIENTE').order_by('-fecha_solicitud')
-        qs_otras = base_qs.exclude(estado='PENDIENTE').order_by('-fecha_solicitud')
-    elif sede_codigo: #Es usuario compra por SEDE
-        qs_pendientes = base_qs.filter(estado='PENDIENTE', ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')
-        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')    
-    else:
-        qs_pendientes = base_qs.filter(estado='PENDIENTE', colaborador=request.user).order_by('-fecha_solicitud')
-        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(colaborador=request.user).order_by('-fecha_solicitud')
-    
-    qs = list(itertools.chain(qs_pendientes, qs_otras))
+    qs = _build_qs(request.user)
+    return JsonResponse({"solicitudes": _serialize_solicitudes(qs), "last_updated": timezone.now().isoformat(timespec='seconds')}, safe=False)
 
-    exclude = [
-        'colaborador__password', 
-        'colaborador__is_staff',
-        'colaborador__is_superuser',
-        'colaborador__last_login'
-    ]
-    serializer = BaseSerializer(qs, exclude=exclude)
-    data_serializada =  serializer.serialize() 
-    for item in data_serializada:
-        obj_original = next(x for x in qs if x.id == item['id'])
-        item['files'] = [
-            {
-                'id': a.id,
-                'nombre': a.nombre,
-                'url_view': a.url_view,
-                'es_certificado': a.es_certificado,
-                'aprobado': a.aprobado
-            } for a in obj_original.adjuntos.all()
-        ]
-        item['review_notes'] = [
-            {
-                'id': c.id,
-                'contenido': c.contenido,
-                'supervisor': c.supervisor.get_full_name() if c.supervisor.get_full_name() else c.supervisor.username,
-                'fecha_creacion': c.fecha_creacion.strftime('%d/%m/%Y'),
-                'estado': c.estado
-            } for c in obj_original.revisiones.all()
-        ]
-    return JsonResponse(data_serializada, safe=False)
+@login_required_json
+def refresh_solicitudes(request):
+    last_updated = request.GET.get('last_updated')
+    if not last_updated:
+        return JsonResponse({"error": "Parámetro 'last_updated' requerido"}, status=400)
+    qs = _build_qs(request.user, last_updated)
+    return JsonResponse({"solicitudes": _serialize_solicitudes(qs), "last_updated": timezone.now().isoformat(timespec='seconds')}, safe=False)
 
 #@csrf_exempt
 @login_required_json

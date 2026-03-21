@@ -3,7 +3,8 @@ from django.urls import path
 from presupuesto import solicitudes_view as view, certificado_pdf as pdf_view
 from presupuesto.catalogo import *
 urlpatterns = [
-    path("solicitudes/list", view.solicitudes_list, name='solicitudes_list'),  
+    path("solicitudes/list", view.solicitudes_list, name='solicitudes_list'),
+    path("solicitudes/refresh/", view.refresh_solicitudes, name='refresh_solicitudes'),
     path('solicitudes/crear/', view.crear_solicitud, name='solicitudes_crear'),
     path('solicitudes/editar/<int:pk>/', view.editar_solicitud, name='solicitudes_editar'),
     path('solicitudes/status/<int:pk>/', view.cambiar_estado, name='cambiar_estado'),
