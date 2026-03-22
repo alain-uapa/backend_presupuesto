@@ -1,9 +1,11 @@
 import json
 import itertools
+from datetime import datetime
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core import serializers
 from django.contrib.auth.decorators import login_required
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -90,6 +92,13 @@ def procesar_datos_solicitud(request, solicitud=None):
 
     if not solicitud:
         solicitud = SolicitudPresupuesto(colaborador=request.user)
+    else:
+        updated_at_str = data.get('updated_at')
+        if updated_at_str:
+            updated_at_client = parse_datetime(updated_at_str)
+            print(updated_at_client, )
+            if updated_at_client < solicitud.updated_at:
+                raise ValueError("Versión desactualizada. La solicitud fue modificada por otro usuario. Intenta nuevamente.")
 
     solicitud.titulo = data.get('titulo', solicitud.titulo)
     solicitud.descripcion = data.get('descripcion', solicitud.descripcion)
@@ -170,6 +179,10 @@ def editar_solicitud(request, pk):
             solicitud_editada = procesar_datos_solicitud(request, solicitud=solicitud)            
             serializer = BaseSerializer([solicitud_editada])
             return JsonResponse({"mensaje": "Actualizada con éxito", "datos": serializer.serialize()[0]}, status=200)
+    except ValueError as e:
+        if "Versión desactualizada" in str(e):
+            return JsonResponse({"error": str(e)}, status=409)
+        raise
     except Exception as e:
         log_error(request, e, {'funcion': 'editar_solicitud', 'pk': pk})
         return JsonResponse({"error": str(e)}, status=400)
