@@ -58,8 +58,10 @@ class BaseSerializer:
         return nested_item
 
     def _format_value(self, value):
-        if isinstance(value, (datetime, date)):
-            return value.strftime(self.date_format)
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, date):
+            return value.isoformat()
         if isinstance(value, Decimal):
             return float(value)
         return value
