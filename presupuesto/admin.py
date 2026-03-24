@@ -15,7 +15,7 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(SolicitudPresupuesto)
 class SolicitudAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'colaborador', 'estado', 'fecha_solicitud', 'monto_a_ejecutar')
+    list_display = ('titulo', 'colaborador', 'estado', 'fecha_solicitud', 'monto_a_ejecutar', 'updated_at')
     list_filter = ('estado', 'tipo_solicitud', 'ubicacion')
     search_fields = ('titulo', 'colaborador__email')
     
