@@ -104,6 +104,5 @@ def generate_pdf(request, template, context, filename):
     html_string = render_to_string(template, context)    
     prefijo = settings.PREFIX_URL.rstrip('/')
     base_url = request.build_absolute_uri(prefijo)
-    print(base_url)
     pdf_file = HTML(string=html_string, base_url=base_url).write_pdf()
     return pdf_file

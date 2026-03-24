@@ -1,153 +1,163 @@
 {% load static %}
-<style>
-   /* 1. Define el tamaño y margen del papel físico */
-   @page {
-       size: A4;
-       margin: 15mm; /* Margen uniforme en los 4 lados */
-   }
-   /* 3. Forzar a la tabla a ocupar el 100% real */
-   table {
-       width: 100%;
-       border-spacing: 0;
-       border-collapse: collapse;
-   }
-   input[type="hidden"] {
-      display: none !important;
-      visibility: hidden !important;
-      height: 0 !important;
-      width: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: none !important;
-  }
-  .table-content td {
-      border: 1px solid #c1c1c1; color: black; font-weight: bold; font-size: 20px; padding: 12px 10px;
-   }
-   /* Fuerza a la columna a ser lo más estrecha posible */
-   .label-col {
-      width: 1%;
-      white-space: nowrap; /* Evita que el texto salte de línea */
-      background-color: #f9f9f9; /* Opcional: un toque gris para diferenciar */
-      border: 1px solid #c1c1c1;
-      color: black;
-      font-weight: bold;
-      font-size: 14px; /* Ajustado de 20px para que quepa bien en una línea */
-      padding: 12px 10px;
-   }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* 1. Definición de Página para WeasyPrint */
+        @page {
+            size: letter landscape;
+            margin: 1cm;
+        }
 
-   /* Las columnas con contenido ocuparán el resto del espacio */
-   .content-col {
-      border: 1px solid #c1c1c1;
-      padding: 10px;
-   }
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
 
-   .content-col span {
-      color: #333;
-      font-size: 13px;
-      font-weight: 500;
-   }
+        /* 2. Estilos de Tabla Principal */
+        table {
+            width: 100%;
+            border-spacing: 0;
+            border-collapse: collapse;
+        }
 
-</style>
+        /* 3. Estilos de la Tabla de Contenido (Datos) */
+        .table-content {
+            width: 100%;
+            margin-top: 10px;
+        }
 
-<div style="font-family: Arial, sans-serif; width: 100%;margin: 0;padding: 0;background-color: white;">
-   <form id="certificado_form" method="POST">        
-     
-      <table style="width: 100%; border-collapse: collapse; border: none;">
-         <tr>
-            <td style="vertical-align: top; width: 350px">
-               <img style="width: 300px;" src="{% static 'presupuesto/images/logo-uapa.png' %}" alt="Logo">
-               <div style="text-align: center; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;color: #e8861a; 
-                      font-size: 20px; 
-                      font-weight: 900; 
-                      letter-spacing: -0.5px; 
-                      text-transform: uppercase;
-                      line-height: 1.1;
-                      margin-bottom: 2px;">
-    
-                  <div>Vicerrectoría Administrativa</div>   
-                  <div>y Financiera</div>              
-              </div>
-            </td>
+        .label-col {
+            width: 1%;
+            white-space: nowrap;
+            background-color: #f9f9f9;
+            border: 1px solid #c1c1c1;
+            color: black;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 12px 10px;
+        }
 
-            <td style="vertical-align: top; text-align: right;">
-               <div style="display: inline-block; text-align: right;margin-top:40px">
-                  <img style="width: 550px;" src="{% static 'presupuesto/images/disponibilidad-presupuestal.png' %}">
-                  <div style="display:flex;flex-direction: row;justify-content: flex-end;gap:7px;margin-top:10px">
-                     <img style="width: 200px;height: 30px;" src="{% static 'presupuesto/images/certificado_text.png' %}">
-                     <div style="background-color: #E67E22; color: white; padding: 0px 20px; border-radius: 18px; font-size: 28px; 
-                        font-weight: bold;
-                        display: flex;  
-                        align-items: center;
-                        justify-content: center;">
-                        {{ sequence_number }}
+        .content-col {
+            border: 1px solid #c1c1c1;
+            padding: 10px;
+            vertical-align: middle;
+        }
+
+        .content-col span {
+            color: #333;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* 4. Helpers */
+        .text-orange {
+            color: #e8861a;
+        }
+
+        input[type="hidden"] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <form id="certificado_form" method="POST">
+        {% csrf_token %}
+        
+        <table style="width: 100%; border: none;">
+            <tr>
+                <td style="vertical-align: top; width: 350px;">
+                    <img style="width: 250px; height: auto;" src="{% static 'presupuesto/images/logo-uapa.png' %}" alt="Logo">
+                    <div style="
+                        display: inline-block; 
+                        color: #e8861a; 
+                        font-size: 15px; 
+                        font-weight: 900; 
+                        text-transform: uppercase; 
+                        line-height: 1.2; 
+                        text-align: center;
+                     ">
+                        <div>Vicerrectoría Administrativa</div>   
+                        <div>y Financiera</div>              
                      </div>
-                     <input type="hidden" name="sequence_number" value="{{ sequence_number }}">
-                  </div>   
-               </div>
-            </td>
-         </tr>
-      </table>
-      <img style="width: 100%;height: 6px;margin:50px 0" src="{% static 'presupuesto/images/line.png' %}">
-     <div style="overflow-x: auto; border: 1px solid #eee; border-radius: 4px; margin-top: 10px;">
-      <table class="table-content" style="width: 100%; min-width: 650px; border-collapse: collapse; background-color: white;">
-         <tbody>
-             <tr>
-                 <td class="label-col">Rubro Presupuestal:</td>
-                 <td class="content-col"><span>{{ rubro_presupuestal }}</span></td>
-                 <td class="label-col">Fecha Solicitud:</td>
-                 <td class="content-col"><span>{{ fecha_solicitud }}</span></td>
-             </tr>
-             
-             <tr>
-                 <td class="label-col">Cuenta analítica:</td>
-                 <td class="content-col"><span>{{ cuenta_analitica }}</span></td>
-                 <td class="label-col">Fecha Aprobación:</td>
-                 <td class="content-col"><span>{{ fecha_aprobacion }}</span></td>
-             </tr>
-             
-             <tr>
-                 <td class="label-col">Solicitante:</td>
-                 <td colspan="3" class="content-col"><span>{{ solicitante }}</span></td>
-             </tr>
-             
-             <tr>
-                 <td class="label-col">Monto Aprobado:</td>
-                 <td colspan="3" class="content-col"><span class="monto-span">{{ monto }}</span></td>
-             </tr>
-             
-             <tr>
-                 <td class="label-col">Cuenta Contable:</td>
-                 <td colspan="3" class="content-col">
-                     <input type="hidden" name="cuenta_contable_id" value="{{cuenta_contable_id}}">
-                     <span class="monto-span">{{ cuenta_contable }}</span>
-                 </td>
-             </tr>
-         </tbody>
-     </table>
-     </div>
+                </td>
 
-     <div style="margin-top: 60px; display: flex; flex-flow: row wrap; gap: 40px; justify-content: flex-end;">
-        <div style="width: 240px;">
-           <div style="font-weight: bold; font-size: 20px; margin-bottom: 30px;">Aprobado por:</div>
-           <div>
-              <div style="font-size: 14px; font-weight: bold;">{{ aprobado_por }}</div>
-              <!--<div style="font-size: 11px; color: #666;">Encargada Presupuesto y Control de Gestión</div>-->
-           </div>
+                <td style="vertical-align: top; text-align: right;">
+                    <div style="display: inline-block; margin-top: 20px;">
+                        <img style="width: 400px; height: auto; display: block; margin-left: auto;" 
+                             src="{% static 'presupuesto/images/disponibilidad-presupuestal.png' %}" alt="Disponibilidad">
+                        
+                        <div style="margin-top: 15px; text-align: right;">
+                            <table style="width: auto; margin-left: auto; border: none;">
+                                <tr>
+                                    <td style="padding-right: 10px;">
+                                        <img style="width: 180px; height: auto; vertical-align: middle;" src="{% static 'presupuesto/images/certificado_text.png' %}">
+                                    </td>
+                                    <td>
+                                        <div style="background-color: #E67E22; color: white; padding: 4px 25px; border-radius: 20px; font-size: 24px; font-weight: bold; text-align: center;line-height: 1;">
+                                            {{ sequence_number }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <input type="hidden" name="sequence_number" value="{{ sequence_number }}">
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div style="margin: 40px 0;">
+            <img style="width: 100%; height: 4px; display: block;" src="{% static 'presupuesto/images/line.png' %}">
         </div>
-        {% comment "" %}
-        <div style="flex: 1 1 280px; min-width: 250px;">
-           <div style="font-weight: bold; font-size: 11px; text-transform: uppercase; margin-bottom: 45px;">Firma Ordenador del Gasto:</div>
-           <div style="border-top: 1.5px solid black; padding-top: 8px;">
-              <div style="font-size: 14px; font-weight: bold;">SB</div>
-              <div style="font-size: 11px; color: #666;">Autoridad Competente</div>
-           </div>
+
+        <table class="table-content">
+            <tbody>
+                <tr>
+                    <td class="label-col">Rubro Presupuestal:</td>
+                    <td class="content-col"><span>{{ rubro_presupuestal }}</span></td>
+                    <td class="label-col">Fecha Solicitud:</td>
+                    <td class="content-col"><span>{{ fecha_solicitud }}</span></td>
+                </tr>
+                <tr>
+                    <td class="label-col">Cuenta analítica:</td>
+                    <td class="content-col"><span>{{ cuenta_analitica }}</span></td>
+                    <td class="label-col">Fecha Aprobación:</td>
+                    <td class="content-col"><span>{{ fecha_aprobacion }}</span></td>
+                </tr>
+                <tr>
+                    <td class="label-col">Solicitante:</td>
+                    <td colspan="3" class="content-col"><span>{{ solicitante }}</span></td>
+                </tr>
+                <tr>
+                    <td class="label-col">Monto Aprobado:</td>
+                    <td colspan="3" class="content-col"><span class="monto-span">{{ monto }}</span></td>
+                </tr>
+                <tr>
+                    <td class="label-col">Cuenta Contable:</td>
+                    <td colspan="3" class="content-col">
+                        <input type="hidden" name="cuenta_contable_id" value="{{cuenta_contable_id}}">
+                        <span class="monto-span">{{ cuenta_contable }}</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 50px; text-align: right;">
+            <div style="display: inline-block; text-align: left;margin-right: 70px;">
+                <div style="font-weight: bold; font-size: 18px; margin-bottom: 30px; padding-bottom: 5px;">
+                    Aprobado por:
+                </div>
+                <div style="padding-left: 5px;">
+                    <div style="font-size: 15px; font-weight: bold; color: #333;">{{ aprobado_por }}</div>
+                </div>
+            </div>
         </div>
-        {% endcomment %}
-     </div>
-     {% comment%}
-     <div style="text-align: right; font-size: 10px; color: #aaa; margin-top: 50px; border-top: 1px solid #eee; padding-top: 10px;">
-        Documento generado electrónicamente | Elaborado por: Stephanie B.
-     </div>
-     {% endcomment %}
-   </form> 
-</div>
+
+    </form> 
+</body>
+</html>
