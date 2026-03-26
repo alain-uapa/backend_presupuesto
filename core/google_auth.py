@@ -2,12 +2,11 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 import json
 from django.http import JsonResponse
 from django.contrib.auth import login
-from django.contrib.auth.models import User,  Group
+from django.contrib.auth.models import User, Group
 from django.views.decorators.csrf import csrf_exempt
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-from presupuesto.models import Configuracion
 # Reemplaza con tu Client ID de Google Console
 GOOGLE_CLIENT_ID = "478848519153-0tklbkp5d7252099relj297632eka3qg.apps.googleusercontent.com"
 
@@ -38,21 +37,21 @@ def google_login(request):
             )
             # 4. Iniciar sesión (Crea la cookie de sesión de Django)
             login(request, user)
-            # Verificar si el usuario ya pertenece al grupo Supervisor
+            # Verificar si el usuario ya pertenece a algún grupo
             es_supervisor = user.groups.filter(name='Supervisor').exists()
+            es_compra_rss = user.groups.filter(name='Compra RSS').exists()
+            es_compra_rsd = user.groups.filter(name='Compra RSD').exists()
+            es_compra_rco = user.groups.filter(name='Compra RCO').exists()
             
-            es_usuario_compra = Configuracion.objects.filter(
-                nombre__startswith='USUARIOS_COMPRA',
-                valor__contains=email
-            ).exists()
-            
-            # Determinar el grupo del usuario: si ya es Supervisor, dejarlo así
-            # sino verificar si es Compra por Configuración, sino es Colaborador
+            # Determinar el grupo del usuario
             if es_supervisor:
-                # Ya es Supervisor, no modificar su grupo
                 rol_usuario = 'Supervisor'
-            elif es_usuario_compra:
-                rol_usuario = 'Compra'
+            elif es_compra_rss:
+                rol_usuario = 'Compra RSS'
+            elif es_compra_rsd:
+                rol_usuario = 'Compra RSD'
+            elif es_compra_rco:
+                rol_usuario = 'Compra RCO'
             elif created:
                 grupo, _ = Group.objects.get_or_create(name='Colaborador')
                 user.groups.add(grupo)

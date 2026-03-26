@@ -60,25 +60,30 @@ def _build_qs(user, fecha_limite=None):
         'adjuntos',
         Prefetch('revisiones', queryset=RevisionSolicitud.objects.select_related('supervisor').order_by('-fecha_creacion'))
     )
-    usuario_compra = Configuracion.objects.filter(
-        nombre__startswith='USUARIOS_COMPRA', valor__contains=user.email
-    ).values_list('nombre', flat=True).first()
-    sede_codigo = usuario_compra.split('_')[-1] if usuario_compra else None
-    if user.is_superuser or user.groups.filter(name='Supervisor').exists():
-        if fecha_limite:
-            return base_qs.filter(updated_at__gte=fecha_limite).order_by('-updated_at')
-        qs_pendientes = base_qs.filter(estado='PENDIENTE').order_by('-fecha_solicitud')
-        qs_otras = base_qs.exclude(estado='PENDIENTE').order_by('-fecha_solicitud')
-    elif sede_codigo:
-        if fecha_limite:
-            return base_qs.filter(updated_at__gte=fecha_limite, ubicacion__codigo=sede_codigo).order_by('-updated_at')
-        qs_pendientes = base_qs.filter(estado='PENDIENTE', ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')
-        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(ubicacion__codigo=sede_codigo).order_by('-fecha_solicitud')
+    es_supervisor = user.is_superuser or user.groups.filter(name='Supervisor').exists()
+    es_compra_rss = user.groups.filter(name='Compra RSS').exists()
+    
+    if es_compra_rsd := user.groups.filter(name='Compra RSD').exists():
+        sede_codigo = 'RSD'
+    elif es_compra_rco := user.groups.filter(name='Compra RCO').exists():
+        sede_codigo = 'RCO'
     else:
-        if fecha_limite:
-            return base_qs.filter(updated_at__gte=fecha_limite, colaborador=user).order_by('-updated_at')
-        qs_pendientes = base_qs.filter(estado='PENDIENTE', colaborador=user).order_by('-fecha_solicitud')
-        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(colaborador=user).order_by('-fecha_solicitud')
+        sede_codigo = None
+    
+    filtros_base = {}
+    filtros_fecha = {'updated_at__gte': fecha_limite} if fecha_limite else {}
+    
+    if es_supervisor or es_compra_rss:
+        qs_pendientes = base_qs.filter(estado='PENDIENTE', **filtros_fecha).order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(**filtros_fecha).order_by('-fecha_solicitud')
+    elif sede_codigo:
+        filtros_base['ubicacion__codigo'] = sede_codigo
+        qs_pendientes = base_qs.filter(estado='PENDIENTE', **filtros_base, **filtros_fecha).order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(**filtros_base, **filtros_fecha).order_by('-fecha_solicitud')
+    else:
+        filtros_base['colaborador'] = user
+        qs_pendientes = base_qs.filter(estado='PENDIENTE', **filtros_base, **filtros_fecha).order_by('-fecha_solicitud')
+        qs_otras = base_qs.exclude(estado='PENDIENTE').filter(**filtros_base, **filtros_fecha).order_by('-fecha_solicitud')
     return list(itertools.chain(qs_pendientes, qs_otras))
 
 
