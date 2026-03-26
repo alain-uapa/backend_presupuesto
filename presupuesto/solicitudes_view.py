@@ -9,6 +9,7 @@ from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
+from decimal import Decimal
 
 from presupuesto import utils
 from .models import Configuracion, SolicitudPresupuesto, AdjuntoSolicitud, Sede, RevisionSolicitud
@@ -101,7 +102,6 @@ def procesar_datos_solicitud(request, solicitud=None):
         updated_at_str = data.get('updated_at')
         if updated_at_str:
             updated_at_client = parse_datetime(updated_at_str)
-            print(updated_at_client, )
             if updated_at_client < solicitud.updated_at:
                 raise ValueError("Versión desactualizada. La solicitud fue modificada por otro usuario. Intenta nuevamente.")
 
@@ -115,9 +115,8 @@ def procesar_datos_solicitud(request, solicitud=None):
     if data.get('cuenta_analitica_id'):
         solicitud.cuenta_analitica_id = int(data.get('cuenta_analitica_id'))
 
-    solicitud.monto_a_ejecutar = float(data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar))
-    solicitud.presupuesto_pre_aprobado = float(data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado))
-
+    solicitud.monto_a_ejecutar = Decimal(data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar)).quantize(Decimal('0.00'))
+    solicitud.presupuesto_pre_aprobado = Decimal(data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado)).quantize(Decimal('0.00'))
     solicitud.full_clean()
     solicitud.save()
 
