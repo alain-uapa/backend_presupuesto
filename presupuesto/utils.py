@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import Group
 from emails.mailer import send_email
 from presupuesto.models import Configuracion
 from .models import Sede
@@ -45,11 +46,22 @@ def enviar_email_solicitud_creada(context):
 def enviar_email_a_compras(request, solicitud):    
     email_template = 'presupuesto/emision_certificado_a_compra.html'
     sede = get_object_or_404(Sede, id=solicitud.ubicacion.id)
-    usuarios_value = Configuracion.get_usuarios_compra_por_sede(sede.codigo)
-    if usuarios_value:
-        send_to_list = [email.strip() for email in usuarios_value.replace(';', ',').split(',') if email.strip()]
-    else:
-        send_to_list = []   
+    sede_codigo = sede.codigo
+    
+    grupos_a_notificar = ['Compra RSS']
+    
+    if sede_codigo == 'RCO':
+        grupos_a_notificar.append('Compra RCO')
+    elif sede_codigo == 'RSD':
+        grupos_a_notificar.append('Compra RSD')
+    
+    send_to_list = [solicitud.colaborador.email]
+    for grupo_nombre in grupos_a_notificar:
+        grupo = Group.objects.filter(name=grupo_nombre).first()
+        if grupo:
+            emails = grupo.user_set.values_list('email', flat=True)
+            send_to_list.extend(emails)
+       
     context={
         'solicitante': solicitud.colaborador.get_full_name(),
         'titulo': solicitud.titulo,
@@ -57,7 +69,6 @@ def enviar_email_a_compras(request, solicitud):
         'sede': sede.nombre,
         'url_solicitud': FrontendRequest.CONFIRM.url(request, solicitud.id)
     }
-    send_to_list.append(solicitud.colaborador.email)
     send_email(
         subject='Presupuesto Aprobado', 
         send_to_list=send_to_list, 
