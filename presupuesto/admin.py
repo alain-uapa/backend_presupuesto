@@ -1,7 +1,18 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin, GroupAdmin as BaseGroupAdmin
+from django.contrib.auth.models import User, Group
+from django.contrib.auth import models as auth_models
 from .models import DriveFolder, SolicitudPresupuesto, Sede, CuentaAnalitica, GoogleConfig, Configuracion, AdjuntoSolicitud, CuentaContable
+
+class UserInline(admin.TabularInline):
+    model = User.groups.through
+    extra = 0
+
+class GroupAdmin(BaseGroupAdmin):
+    inlines = [UserInline]
+
+admin.site.unregister(auth_models.Group)
+admin.site.register(auth_models.Group, GroupAdmin)
 
 class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'get_groups')

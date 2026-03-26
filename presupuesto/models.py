@@ -151,28 +151,6 @@ class Configuracion(models.Model):
             return config.valor
         return default
 
-    @classmethod
-    def get_usuarios_compra_por_sede(cls, sede_codigo):
-        """
-        Busca una configuración de usuarios de contabilidad por código de sede.
-        
-        Args:
-            sede_codigo: Código de la sede (ej: 'SED001', '01', etc.)
-            
-        Returns:
-            El valor de la configuración si se encuentra, None en caso contrario.
-        """
-        # Buscar configuraciones que contengan 'USUARIOS_COMPRA_'
-        # y que terminen con el código de sede
-        config = cls.objects.filter(
-            nombre__contains='USUARIOS_COMPRA_',
-            nombre__endswith=sede_codigo
-        ).first()
-        
-        if config:
-            return config.valor
-        return None
-
     def __str__(self):
         return self.nombre
 
