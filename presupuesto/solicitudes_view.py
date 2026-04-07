@@ -146,9 +146,12 @@ def solicitudes_list(request):
 
 @login_required_json
 def refresh_solicitudes(request):
+    from urllib.parse import unquote
     last_updated = request.GET.get('last_updated')
+    print("last_updated: "+ last_updated)
     if not last_updated:
         return JsonResponse({"error": "Parámetro 'last_updated' requerido"}, status=400)
+    last_updated = unquote(last_updated)
     qs = _build_qs(request.user, last_updated)
     return JsonResponse({"solicitudes": _serialize_solicitudes(qs), "last_updated": timezone.now().isoformat(timespec='seconds')}, safe=False)
 
