@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from datetime import date
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -58,6 +59,7 @@ class SolicitudPresupuesto(models.Model):
     # Relación con el Colaborador
     colaborador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    fecha_actividad = models.DateField(default=date.today)
     titulo = models.CharField(max_length=200, verbose_name="Nombre de la solicitud")
     descripcion = models.TextField()
     

@@ -1,6 +1,7 @@
 import json
 import itertools
 from datetime import datetime
+from django.utils.dateparse import parse_datetime
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core import serializers
@@ -117,6 +118,11 @@ def procesar_datos_solicitud(request, solicitud=None):
 
     solicitud.monto_a_ejecutar = Decimal(data.get('monto_a_ejecutar', solicitud.monto_a_ejecutar)).quantize(Decimal('0.00'))
     solicitud.presupuesto_pre_aprobado = Decimal(data.get('presupuesto_pre_aprobado', solicitud.presupuesto_pre_aprobado)).quantize(Decimal('0.00'))
+    
+    dt = parse_datetime(data.get('fecha_actividad'))
+    if dt:
+        solicitud.fecha_actividad = dt.date()
+    
     solicitud.full_clean()
     solicitud.save()
 
