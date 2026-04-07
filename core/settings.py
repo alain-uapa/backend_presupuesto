@@ -219,7 +219,7 @@ LOGGING = {
         'file': {
             'level': 'ERROR',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': LOGS_DIR / 'errors.log',
+            'filename': str(LOGS_DIR / 'errors.log'),
             'formatter': 'verbose',
             'when': 'midnight',
             'interval': 1,
