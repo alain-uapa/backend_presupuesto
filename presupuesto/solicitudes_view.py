@@ -148,7 +148,6 @@ def solicitudes_list(request):
 def refresh_solicitudes(request):
     from urllib.parse import unquote
     last_updated = request.GET.get('last_updated')
-    print("last_updated: "+ last_updated)
     if not last_updated:
         return JsonResponse({"error": "Parámetro 'last_updated' requerido"}, status=400)
     last_updated = unquote(last_updated)
