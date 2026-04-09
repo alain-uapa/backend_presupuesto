@@ -13,9 +13,10 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; color: #333333; }
     </style>
-<script type="module" crossorigin src="/presupuesto/django_static/assets/index.js"></script>
-<link rel="stylesheet" crossorigin href="/presupuesto/django_static/assets/index.css">
-
+    {% with version="1.0.5" %}
+    <script type="module" crossorigin src="/presupuesto/django_static/assets/index.js?v={{ version }}"></script>
+    <link rel="stylesheet" crossorigin href="/presupuesto/django_static/assets/index.css?v={{ version }}">
+    {% endwith %}
 <body class="bg-[#F8F9FA] text-[#333333]">
     <div id="root"></div>
 </body>
