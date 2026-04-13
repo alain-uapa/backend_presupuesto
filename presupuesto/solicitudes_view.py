@@ -38,13 +38,14 @@ EXCLUDE_COLABORADOR = [
 def _serialize_solicitudes(qs):
     serializer = BaseSerializer(qs, exclude=EXCLUDE_COLABORADOR)
     data = serializer.serialize()
-    for item in data:
+    for item in data:        
         obj = next(x for x in qs if x.id == item['id'])
         item['files'] = [
             {'id': a.id, 'nombre': a.nombre, 'url_view': a.url_view,
              'es_certificado': a.es_certificado, 'aprobado': a.aprobado}
             for a in obj.adjuntos.all()
         ]
+        item['tiene_certificado'] = any(a['es_certificado'] for a in item['files'])
         item['review_notes'] = [
             {'id': c.id, 'contenido': c.contenido,
              'supervisor': c.supervisor.get_full_name() or c.supervisor.username,
