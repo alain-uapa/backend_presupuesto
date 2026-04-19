@@ -66,7 +66,7 @@ def google_login(request):
                         "email": user.email, 
                         "first_name": user.first_name,
                         "last_name": user.last_name,
-                        "picture": idinfo['picture'],
+                        "picture": idinfo.get('picture', ''),
                         "role": rol_usuario
                         }
             })
