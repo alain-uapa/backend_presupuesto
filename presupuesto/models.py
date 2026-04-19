@@ -25,7 +25,7 @@ class CuentaAnalitica(models.Model):
     nombre = models.CharField(max_length=100)
     
     def __str__(self):
-        return self.nombre
+        return f"{self.codigo} - {self.nombre}"
 
 class CuentaContable(models.Model):
     codigo = models.CharField(max_length=20, unique=True)
