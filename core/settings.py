@@ -26,7 +26,7 @@ LOGS_DIR.mkdir(exist_ok=True)
 SECRET_KEY = 'django-insecure-@u!kyz^xws@o0-%op9$j1htge^x#q(@9)c^-eohcv_qjqn53li'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'gtsst.uapa.edu.do',
@@ -34,7 +34,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '34.121.55.146',
     '127.0.0.1',
-    'aistudio.google.com'
+    'cep.uapa.edu.do'
 ]
 
 
@@ -69,7 +69,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://abiotic-kenzie-braggadocian.ngrok-free.dev",
     "http://localhost:3000", 
     'http://127.0.0.1:3000',
-    'https://aistudio.google.com'
+    'https://cep.uapa.edu.do'
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
@@ -90,6 +90,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.usercontent.goog",
     "https://abiotic-kenzie-braggadocian.ngrok-free.dev",
     "https://gtsst.uapa.edu.do",
+    "https://cep.uapa.edu.do"
 ]
 
 # Como estás detrás de un proxy (Apache), esto le dice a Django 
