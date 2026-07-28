@@ -195,7 +195,7 @@ except ImportError:
     ENTORNO = "PRODUCCIÓN (Servidor UAPA)"
     COLOR_MSG = "\033[92m"  # Verde para producción
     # Esto obligará a Django a generar todas las URLs con /presupuesto/
-    PREFIX_URL = '/presupuesto'
+    #PREFIX_URL = '/presupuesto'
     DEBUG = False
 
 finally:
@@ -203,6 +203,7 @@ finally:
     reset_color = "\033[0m"
     print(f"\n{COLOR_MSG}>>> [SISTEMA PRESUPUESTO] Conectado a: {ENTORNO}{reset_color}\n")
 
+PREFIX_URL = ''
 STATIC_URL = f'{PREFIX_URL}/django_static/'
 
 from emails.config import *
