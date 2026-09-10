@@ -34,8 +34,8 @@ ALLOWED_HOSTS = [
     'localhost',
     '34.121.55.146',
     '127.0.0.1',
-    'cep.uapa.edu.do'
-]
+    'cep.uapa.edu.do',
+    '34.138.212.162']
 
 
 # Application definition
